@@ -4,8 +4,8 @@ const ctx = canvas.getContext("2d");
 
 // ====== Constants & Assets ======
 const centerLineWidth = 6;
-const enemyCar = new Image(); enemyCar.src = "enemycar.png";
-const car = new Image(); car.src = "car.png";
+const enemyCar = new Image(); enemyCar.src = "/images/enemycar.png";
+const car = new Image(); car.src = "/images/car.png";
 
 // Asphalt pattern
 const tile = document.createElement("canvas");
