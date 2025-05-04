@@ -1,9 +1,3 @@
-import { NextResponse } from 'next/server';
-
-export async function GET() {
-  return NextResponse.json({ ok: true });
-}
-
 // ====== Canvas & Context ======
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
