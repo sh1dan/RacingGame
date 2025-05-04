@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini Racing Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="game.css">
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <a href="index.html">
+        <img src="logo.svg" alt="Racing Game Logo" class="logo-img">
+      </a>
+    </div>
+    <nav>
+      <a href="index.html">Game</a>
+      <a href="leaderboard.html">Leaderboard</a>
+    </nav>
+    <a href="#" class="privacy">Privacy Policy</a>
+  </header>
+
+  <div class="full-layout">
+    <div></div>
+    <div class="canvas-column">
+      <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+      <!-- Game Over Overlay -->
+      <div id="gameOverScreen" class="hidden">
+        <div class="score-block">
+          <div class="label">SCORE</div>
+          <div class="value" id="finalScore">0</div>
+          <div class="label">BEST</div>
+          <div class="value" id="bestScoreDisplay">0</div>
+        </div>
+        <div class="button-row">
+          <button id="restartBtn">RESTART</button>
+          <button id="shareBtn">SHARE</button>
+        </div>
+        <button id="leaderboardBtn">ADD TO LEADERBOARD</button>
+      </div>
+    </div>
+    <aside class="info-box">
+      <img src="logo.svg" alt="Racing Game Logo" class="logo-img">
+      <p> Use <strong>←</strong> and <strong>→</strong> to dodge enemy cars, hold <strong>↑</strong> for a speed boost,
+        and press <strong>R</strong> to restart after Game Over.</p>
+      <p>Built with HTML5, CSS3, and JavaScript — no installation required!</p>
+      <hr>
+      <p class="credit">Created by <strong>@YanRiabonenko</strong></p>
+    </aside>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

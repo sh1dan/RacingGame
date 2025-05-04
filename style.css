@@ -1,0 +1,298 @@
+/* ====== Base Styles ====== */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #1e1f26;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+header {
+  background: #2c2f34;
+  padding: 10px 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+header .logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: #f66;
+}
+
+header nav a {
+  margin: 0 15px;
+  color: #ccc;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+header .privacy {
+  color: #aaa;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.full-layout {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 80px;
+  padding: 40px 20px;
+  flex-wrap: wrap;
+}
+
+.canvas-column {
+  padding: 10px;
+  position: relative;
+}
+
+.info-box {
+  background: #2d2f34;
+  padding: 20px;
+  width: 300px;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+}
+
+.info-box h2 {
+  margin-top: 0;
+  color: #fff;
+}
+
+.info-box p {
+  font-size: 14px;
+  color: #ccc;
+}
+
+.info-box .credit {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 10px;
+}
+
+.logo-img {
+  width: 200px;
+  display: block;
+  margin: 0px;
+}
+
+canvas {
+  background: linear-gradient(to bottom, #4d4d4d, #333);
+  border: 4px solid #222;
+  display: block;
+  margin: 0 auto;
+  box-shadow: 0 0 20px #000;
+}
+
+/* ====== Game Over Overlay Styles ====== */
+#gameOverScreen.hidden {
+  display: none;
+}
+
+#gameOverScreen {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60vmin;
+  max-width: 280px;
+  aspect-ratio: 1 / 1;
+  background: #2d2f34;
+  border: 2px solid #f66;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  box-sizing: border-box;
+  font-family: 'Press Start 2P', sans-serif;
+}
+
+#gameOverScreen .score-block {
+  text-align: center;
+}
+
+#gameOverScreen .label {
+  font-size: 14px;
+  color: #f66;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+#gameOverScreen .value {
+  font-size: 48px;
+  color: #fff;
+  margin: 8px 0 16px;
+}
+
+#gameOverScreen .button-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+#gameOverScreen button {
+  flex: 1;
+  background: #f66;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  padding: 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: 'Press Start 2P', sans-serif;
+}
+
+#gameOverScreen button:hover {
+  background: #d35454;
+}
+
+#leaderboardBtn {
+  background: none;
+  color: #f66;
+  border: 2px solid #f66;
+  margin-top: 12px;
+  width: 100%;
+  border-radius: 4px;
+  padding: 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  font-family: 'Press Start 2P', sans-serif;
+}
+
+#leaderboardBtn:hover {
+  background: #f66;
+  color: #fff;
+}
+
+/* Hide utility */
+.hidden {
+  display: none;
+}
+
+/* Hide utility */
+.hidden {
+  display: none;
+}
+
+/* ====== Form Panel ====== */
+.form-panel {
+  width: 60vmin;
+  max-width: 500px;
+  margin: 40px auto 0;
+  background: #2d2f34;
+  border: 1px solid #444;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  box-sizing: border-box;
+}
+
+.form-panel .score-display {
+  text-align: center;
+  padding: 16px 0;
+}
+.form-panel .score-display .label {
+  color: #ccc;
+  font-size: 16px;
+}
+.form-panel .score-display .value {
+  font-family: 'Press Start 2P', monospace;
+  color: #ddd;
+  font-size: 64px;
+  margin-top: 4px;
+}
+
+/* Dark header bar */
+.panel-header {
+  background: #33353c;
+  color: #eee;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 12px 16px;
+  border-bottom: 1px solid #444;
+}
+
+/* Flex row for input + button */
+.entry-form {
+  display: flex;
+  background: #2d2f34;
+}
+
+.entry-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 16px;
+  border: none;
+  background: #fff;
+  color: #333;
+  font-size: 14px;
+  outline: none;
+}
+
+.entry-form button {
+  background: #4b4e57;
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.entry-form button:hover {
+  background: #5c5f67;
+}
+
+/* ====== Leaderboard Panel ====== */
+.leaderboard-panel {
+  max-width: 800px;
+  margin: 40px auto;
+}
+
+.leaderboard-panel h2 {
+  text-align: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 32px;
+  margin-bottom: 16px;
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.subtitle {
+  text-align: center;
+  color: #aaa;
+  margin-bottom: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  padding: 8px;
+  border: 1px solid #444;
+  color: #fff;
+}
+th {
+  background: #3d3f44;
+}
+tr:nth-child(odd) td {
+  background: #2f3035;
+}
