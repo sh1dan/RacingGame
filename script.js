@@ -59,7 +59,7 @@ restartBtn.addEventListener('click', () => {
   restartGame();
 });
 shareBtn.addEventListener('click', () => {
-  const text = `I scored ${score} points on HTML5 RacingGame!\nracinggame.io`;
+  const text = `I scored ${score} points on HTML5 RacingGame!\nracinggame-five.vercel.app`;
   const shareUrl =
     'https://x.com/intent/tweet?text=' + encodeURIComponent(text);
   window.open(shareUrl, '_blank', 'noopener');
