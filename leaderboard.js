@@ -1,9 +1,3 @@
-import { NextResponse } from 'next/server';
-
-export async function GET() {
-  return NextResponse.json({ ok: true });
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     const params          = new URLSearchParams(location.search);
     const newScoreParam   = params.get('newScore');
