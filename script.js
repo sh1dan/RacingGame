@@ -34,7 +34,7 @@ const player = {
   speed: 5
 };
 const speedNormal = 5, speedBoost = 12;
-let score = 0, bestScore = 0, gameStarted = false, gameOver = false;
+let score = 0, bestScore = parseInt(localStorage.getItem('bestScore')) || 0, gameStarted = false, gameOver = false;
 const enemies = [], keys = {};
 
 // ====== Overlay Elements ======
@@ -118,6 +118,7 @@ function update() {
     ) {
       gameOver = true;
       bestScore = Math.max(bestScore, score);
+      localStorage.setItem('bestScore', bestScore);
     }
   });
 
