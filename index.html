@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Racing Game</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,12 +43,42 @@
         </div>
         <button id="leaderboardBtn">ADD TO LEADERBOARD</button>
         </div>
+        
+        <!-- Pause Overlay -->
+        <div id="pauseOverlay" class="hidden">
+          <div class="pause-screen">
+            <h2>PAUSED</h2>
+            <p>Press P to continue</p>
+            <button id="resumeBtn">RESUME</button>
+          </div>
+        </div>
+        
+        <!-- Mobile Controls -->
+        <div id="mobileControls" class="mobile-controls hidden">
+          <button id="mobilePause" class="mobile-btn pause-btn pause-btn-top-left" aria-label="Pause">
+            <img src="assets/images/pause-icon.svg" alt="Pause" class="pause-icon">
+          </button>
+          <div class="mobile-controls-group left-group">
+            <button id="mobileLeft" class="mobile-btn" aria-label="Steer Left">
+              <img src="assets/images/left-arrow-icon.svg" alt="Left" class="arrow-icon">
+            </button>
+            <button id="mobileRight" class="mobile-btn" aria-label="Steer Right">
+              <img src="assets/images/right-arrow-icon.svg" alt="Right" class="arrow-icon">
+            </button>
+          </div>
+          <div class="mobile-controls-group right-group">
+            <button id="mobileBoost" class="mobile-btn boost-btn" aria-label="Boost">
+              <img src="assets/images/up-arrow-icon.svg" alt="Boost" class="arrow-icon">
+            </button>
+          </div>
+        </div>
       </div>
     </div>
     <aside class="info-box">
       <img src="assets/images/logo.svg" alt="Racing Game Logo" class="logo-img">
-      <p> Use <strong>←</strong> and <strong>→</strong> to dodge enemy cars, hold <strong>↑</strong> for a speed boost,
-        and press <strong>R</strong> to restart after Game Over.</p>
+      <p class="desktop-instructions"> Use <strong>←</strong> and <strong>→</strong> to dodge enemy cars, hold <strong>↑</strong> for a speed boost,
+        press <strong>P</strong> to pause, and press <strong>R</strong> to restart after Game Over.</p>
+      <p class="mobile-instructions">On mobile: Use swipe gestures or virtual buttons. Touch controls are automatically enabled.</p>
       <p>Built with HTML5, CSS3, and JavaScript — no installation required!</p>
       <hr>
       <p class="credit">Created by <strong>@YanRiabonenko</strong></p>

@@ -2,6 +2,69 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+// ====== Utility Functions ======
+
+/**
+ * Detects if the current device is a mobile device
+ * @returns {boolean} True if mobile device, false otherwise
+ */
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+}
+
+/**
+ * Debounce function to limit how often a function can be called
+ * @param {Function} func - Function to debounce
+ * @param {number} wait - Delay in milliseconds
+ * @returns {Function} Debounced function
+ */
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+/**
+ * Provides haptic feedback if supported
+ * @param {number|number[]} pattern - Vibration pattern (ms duration or array of [vibrate, pause, vibrate, ...])
+ */
+function hapticFeedback(pattern = 50) {
+  if ('vibrate' in navigator) {
+    try {
+      navigator.vibrate(pattern);
+    } catch (e) {
+      // Silently fail if vibration is not supported or blocked
+    }
+  }
+}
+
+// Adaptive canvas sizing for mobile
+function resizeCanvas() {
+  const isMobile = isMobileDevice();
+  
+  if (isMobile) {
+    // На мобильных используем CSS для управления размером
+    // Убираем inline стили, чтобы CSS мог работать
+    canvas.style.width = '';
+    canvas.style.height = '';
+    canvas.style.maxWidth = '';
+  } else {
+    canvas.style.width = '400px';
+    canvas.style.height = '600px';
+    canvas.style.maxWidth = '';
+  }
+}
+
+// Resize on load and window resize (debounced for performance)
+resizeCanvas();
+window.addEventListener('resize', debounce(resizeCanvas, 200));
+
 // ====== Constants & Assets ======
 const centerLineWidth = 6;
 const enemyCar = new Image();
@@ -10,6 +73,94 @@ const roadImage = new Image();
 let imagesLoaded = 0;
 const totalImages = 3;
 let allImagesReady = false;
+
+// ====== Audio System ======
+let audioContext = null;
+let soundsEnabled = true;
+
+// Initialize audio context (required for Web Audio API)
+function initAudio() {
+  try {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    // Try to load sound settings from localStorage
+    const soundSetting = localStorage.getItem('soundsEnabled');
+    if (soundSetting !== null) {
+      soundsEnabled = soundSetting === 'true';
+    }
+  } catch (e) {
+    console.warn('Web Audio API not supported:', e);
+    soundsEnabled = false;
+  }
+}
+
+// Generate sound using Web Audio API
+function playSound(frequency, duration, type = 'sine', volume = 0.3) {
+  if (!soundsEnabled || !audioContext) return;
+  
+  try {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = frequency;
+    oscillator.type = type;
+    
+    gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + duration);
+  } catch (e) {
+    console.warn('Error playing sound:', e);
+  }
+}
+
+// Sound effects
+const sounds = {
+  engine: null,
+  engineInterval: null,
+  playEngine() {
+    if (!soundsEnabled || !audioContext) return;
+    // Continuous engine sound (low frequency)
+    if (!this.engineInterval) {
+      this.engineInterval = setInterval(() => {
+        playSound(80, 0.1, 'sawtooth', 0.15);
+      }, 100);
+    }
+  },
+  stopEngine() {
+    if (this.engineInterval) {
+      clearInterval(this.engineInterval);
+      this.engineInterval = null;
+    }
+  },
+  playBoost() {
+    playSound(200, 0.2, 'square', 0.4);
+  },
+  playCollision() {
+    // Low frequency crash sound
+    playSound(60, 0.3, 'sawtooth', 0.6);
+    setTimeout(() => playSound(40, 0.2, 'sawtooth', 0.4), 50);
+  },
+  playScore() {
+    // High frequency success sound
+    playSound(800, 0.1, 'sine', 0.3);
+    setTimeout(() => playSound(1000, 0.1, 'sine', 0.3), 50);
+  },
+  playBackground() {
+    // Optional: simple background music loop
+    // This is a placeholder - can be replaced with actual audio file
+  }
+};
+
+// Initialize audio on user interaction (browser requirement)
+document.addEventListener('click', () => {
+  if (!audioContext) {
+    initAudio();
+  }
+}, { once: true });
 
 function loadImage(img, src) {
   return new Promise((resolve, reject) => {
@@ -155,10 +306,15 @@ try {
   console.warn('localStorage not available:', e);
   bestScore = 0;
 }
-let gameStarted = false, gameOver = false;
+let gameStarted = false, gameOver = false, gamePaused = false;
 const enemies = [], keys = {};
 let lastSpawnTime = 0;
 let roadOffset = 0; // For road animation
+
+// Touch controls
+let touchStartX = 0;
+let touchStartY = 0;
+let isTouching = false;
 
 // Road dimensions (defined here so they can be used in multiple functions)
 const shoulderWidth = 40; // Brown shoulder on each side
@@ -192,6 +348,9 @@ function showGameOverScreen() {
   if (bestScoreDisplay) bestScoreDisplay.textContent = bestScore;
   if (gameOverBackdrop) gameOverBackdrop.classList.remove('hidden');
   if (gameOverScreen) gameOverScreen.classList.remove('hidden');
+  // Скрываем мобильные контролы при Game Over
+  const isMobile = isMobileDevice();
+  updateMobileControlsVisibility(isMobile);
 }
 function hideGameOverScreen() {
   if (gameOverBackdrop) gameOverBackdrop.classList.add('hidden');
@@ -221,10 +380,19 @@ if (leaderboardBtn) {
 
 // ====== Input ======
 window.addEventListener('keydown', e => {
+  // Pause toggle
+  if (e.key.toLowerCase() === 'p' && gameStarted && !gameOver) {
+    togglePause();
+    return;
+  }
+  
   keys[e.key] = true;
   if (!gameStarted && ["ArrowLeft","ArrowRight","ArrowUp"].includes(e.key)) {
     gameStarted = true;
     lastSpawnTime = Date.now();
+    sounds.playEngine();
+    const isMobile = isMobileDevice();
+    updateMobileControlsVisibility(isMobile);
   }
   if (gameOver && e.key === "r") {
     hideGameOverScreen();
@@ -234,6 +402,151 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => {
   keys[e.key] = false;
 });
+
+// Touch controls for mobile
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+  isTouching = true;
+  
+  if (!gameStarted && !gameOver) {
+    gameStarted = true;
+    lastSpawnTime = Date.now();
+    sounds.playEngine();
+    const isMobile = isMobileDevice();
+    updateMobileControlsVisibility(isMobile);
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (!isTouching || gamePaused || gameOver) return;
+  
+  const touch = e.touches[0];
+  const deltaX = touch.clientX - touchStartX;
+  const deltaY = touchStartY - touch.clientY;
+  
+  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+    if (deltaX > 0) {
+      keys.ArrowRight = true;
+      keys.ArrowLeft = false;
+    } else {
+      keys.ArrowLeft = true;
+      keys.ArrowRight = false;
+    }
+  }
+  
+  if (deltaY > 20) {
+    keys.ArrowUp = true;
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  isTouching = false;
+  keys.ArrowLeft = false;
+  keys.ArrowRight = false;
+  keys.ArrowUp = false;
+}, { passive: false });
+
+canvas.addEventListener('touchcancel', (e) => {
+  e.preventDefault();
+  isTouching = false;
+  keys.ArrowLeft = false;
+  keys.ArrowRight = false;
+  keys.ArrowUp = false;
+}, { passive: false });
+
+// Mobile virtual buttons
+const mobileControls = document.getElementById('mobileControls');
+const mobileLeft = document.getElementById('mobileLeft');
+const mobileRight = document.getElementById('mobileRight');
+const mobileBoost = document.getElementById('mobileBoost');
+const mobilePause = document.getElementById('mobilePause');
+const resumeBtn = document.getElementById('resumeBtn');
+
+function checkMobile() {
+  const isMobile = isMobileDevice();
+  updateMobileControlsVisibility(isMobile);
+  return isMobile;
+}
+
+function updateMobileControlsVisibility(isMobile) {
+  if (mobileControls) {
+    // Показываем контролы только на мобильных, когда игра запущена, не на паузе и не Game Over
+    if (isMobile && gameStarted && !gameOver && !gamePaused) {
+      mobileControls.classList.remove('hidden');
+    } else {
+      mobileControls.classList.add('hidden');
+    }
+  }
+}
+
+if (mobileLeft) {
+  mobileLeft.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    hapticFeedback(30);
+    keys.ArrowLeft = true;
+    if (!gameStarted && !gameOver) {
+      gameStarted = true;
+      lastSpawnTime = Date.now();
+      sounds.playEngine();
+    }
+  });
+  mobileLeft.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    keys.ArrowLeft = false;
+  });
+}
+
+if (mobileRight) {
+  mobileRight.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    hapticFeedback(30);
+    keys.ArrowRight = true;
+    if (!gameStarted && !gameOver) {
+      gameStarted = true;
+      lastSpawnTime = Date.now();
+      sounds.playEngine();
+    }
+  });
+  mobileRight.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    keys.ArrowRight = false;
+  });
+}
+
+if (mobileBoost) {
+  mobileBoost.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    hapticFeedback(30);
+    keys.ArrowUp = true;
+  });
+  mobileBoost.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    keys.ArrowUp = false;
+  });
+}
+
+if (mobilePause) {
+  mobilePause.addEventListener('click', () => {
+    if (gameStarted && !gameOver) {
+      hapticFeedback(30);
+      togglePause();
+    }
+  });
+}
+
+if (resumeBtn) {
+  resumeBtn.addEventListener('click', () => {
+    togglePause();
+  });
+}
+
+checkMobile();
+window.addEventListener('resize', debounce(checkMobile, 200));
 
 // ====== Enemy Spawn ======
 function spawnEnemy() {
@@ -284,9 +597,29 @@ function getSpawnInterval() {
   return Math.max(baseInterval - scoreReduction, 600); // Min 600ms
 }
 
+// ====== Pause System ======
+function togglePause() {
+  gamePaused = !gamePaused;
+  const pauseOverlay = document.getElementById('pauseOverlay');
+  if (pauseOverlay) {
+    if (gamePaused) {
+      pauseOverlay.classList.remove('hidden');
+      sounds.stopEngine();
+    } else {
+      pauseOverlay.classList.add('hidden');
+      if (gameStarted && !gameOver) {
+        sounds.playEngine();
+      }
+    }
+  }
+  // Обновляем видимость мобильных контролов при паузе
+  const isMobile = isMobileDevice();
+  updateMobileControlsVisibility(isMobile);
+}
+
 // ====== Update ======
 function update() {
-  if (!gameStarted || gameOver) return;
+  if (!gameStarted || gameOver || gamePaused) return;
 
   // Smooth player movement with acceleration and friction
   if (keys.ArrowLeft) {
@@ -316,6 +649,12 @@ function update() {
 
   // Enemy movement with speed multiplier
   const mv = keys.ArrowUp ? speedBoost : speedNormal;
+  
+  // Play boost sound when boosting
+  if (keys.ArrowUp && mv === speedBoost) {
+    sounds.playBoost();
+  }
+  
   enemies.forEach(e => {
     e.y += mv * (e.speedMultiplier || 1.0);
   });
@@ -341,6 +680,10 @@ function update() {
       player.y + player.height > e.y
     ) {
       gameOver = true;
+      sounds.stopEngine();
+      sounds.playCollision();
+      // Haptic feedback for collision (stronger pattern for crash)
+      hapticFeedback([100, 50, 100]);
       bestScore = Math.max(bestScore, score);
       try {
         localStorage.setItem('bestScore', bestScore.toString());
@@ -359,6 +702,7 @@ function update() {
     if (enemies[i].y > canvas.height) {
       enemies.splice(i, 1);
       score += pointsPerEnemy;
+      sounds.playScore();
     }
   }
 }
@@ -516,6 +860,10 @@ function draw() {
     showGameOverScreen();
     return;
   }
+  
+  // Обновляем видимость мобильных контролов в главном цикле
+  const isMobile = isMobileDevice();
+  updateMobileControlsVisibility(isMobile);
 }
 
 // ====== Restart ======
@@ -524,11 +872,20 @@ function restartGame() {
   enemies.length = 0;
   gameStarted = false;
   gameOver = false;
+  gamePaused = false;
   player.x = canvas.width/2 - player.width/2;
   player.velocity = 0;
   roadOffset = 0;
   lastSpawnTime = Date.now();
+  sounds.stopEngine();
   hideGameOverScreen();
+  const pauseOverlay = document.getElementById('pauseOverlay');
+  if (pauseOverlay) {
+    pauseOverlay.classList.add('hidden');
+  }
+  // Скрываем мобильные контролы при рестарте (игра еще не началась)
+  const isMobile = isMobileDevice();
+  updateMobileControlsVisibility(isMobile);
 }
 
 // ====== Main Loop ======
