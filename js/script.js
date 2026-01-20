@@ -98,7 +98,7 @@ function resizeCanvas() {
         // Используем реальный размер wrapper для canvas, но не меньше минимального
         displayWidth = Math.max(wrapperRect.width || window.innerWidth, 300);
         // Увеличиваем высоту canvas на мобильных - используем больше пространства экрана, минус 4px
-        displayHeight = Math.max(wrapperRect.height || (window.innerHeight - 50 - 100 - 4), 496);
+        displayHeight = Math.max(wrapperRect.height || (window.innerHeight - 50 - 100 - 6), 496);
         
         // Получаем devicePixelRatio для высокого качества на Retina дисплеях
         const dpr = window.devicePixelRatio || 1;

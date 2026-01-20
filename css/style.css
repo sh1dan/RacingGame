@@ -109,16 +109,6 @@ header nav a:focus {
   outline-offset: 2px;
 }
 
-header nav a.active {
-  color: #fff;
-  background: rgba(255, 102, 102, 0.2);
-  font-weight: 600;
-}
-
-header nav a.active:hover {
-  background: rgba(255, 102, 102, 0.3);
-}
-
 .full-layout {
   flex-grow: 1;
   display: grid;
@@ -523,8 +513,8 @@ header nav a.active:hover {
   canvas {
     width: 100vw !important;
     max-width: 100vw !important;
-    height: calc(100vh - 50px - 100px - 4px) !important;
-    max-height: calc(100vh - 50px - 100px - 4px) !important;
+    height: calc(100vh - 50px - 100px - 6px) !important;
+    max-height: calc(100vh - 50px - 100px - 6px) !important;
     object-fit: fill;
     margin: 0 auto !important;
   }
@@ -754,8 +744,8 @@ canvas.loaded {
     canvas {
       width: 100vw !important;
       max-width: 100vw !important;
-      height: calc(100vh - 50px - 100px - 4px) !important;
-      max-height: calc(100vh - 50px - 100px - 4px) !important;
+      height: calc(100vh - 50px - 100px - 6px) !important;
+      max-height: calc(100vh - 50px - 100px - 6px) !important;
       object-fit: fill;
       display: block !important;
       visibility: visible !important;
