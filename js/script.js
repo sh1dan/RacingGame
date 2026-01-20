@@ -1075,8 +1075,22 @@ function draw() {
   ctx.rotate(tiltAngle);
   
   if (keys.ArrowUp) { 
+    // Масштабируем shadowBlur для правильного отображения на мобильных с dpr
+    const dpr = window.devicePixelRatio || 1;
+    const isMobile = isMobileDevice();
     ctx.shadowColor = "cyan"; 
-    ctx.shadowBlur = 20; 
+    // На мобильных контекст уже масштабирован на dpr, поэтому shadowBlur должен быть в координатах контекста
+    // Чтобы визуальный эффект был одинаковым, используем одинаковое значение
+    // Но увеличиваем для лучшей видимости на мобильных
+    ctx.shadowBlur = isMobile ? 20 * dpr : 20; 
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+  } else {
+    // Сбрасываем shadow когда не ускоряемся
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
   }
   
   // Only draw if image is loaded - no fallback rectangles
