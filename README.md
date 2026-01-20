@@ -140,7 +140,9 @@ Then open your browser to `http://localhost:8000`
 
 ## 📸 Screenshots
 
-> https://tikolu.net/i/vgxox
+<div align="center">
+  <img src="https://tikolu.net/i/vgxox" alt="RacingGame Main Page" width="800"/>
+</div> 
 
 ### Game Features Showcase
 
