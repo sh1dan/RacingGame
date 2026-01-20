@@ -57,7 +57,7 @@ Racing Game is an engaging top-down racing game where players dodge enemy cars w
 - 📦 **Modular Structure**: Well-organized codebase
 - 🎯 **Performance Optimized**: Efficient collision detection and rendering
 - ⏱️ **Frame-Rate Independent**: DeltaTime-based movement ensures consistent speed across all devices
-- 📱 **Mobile-First**: Enhanced touch controls with position-based steering and haptic feedback support
+- 📱 **Mobile-First**: Full-screen canvas on mobile with virtual button controls and haptic feedback support
 - 🎨 **Seamless Road Tiling**: Canvas pattern-based road rendering eliminates visible seams
 
 ---
@@ -119,12 +119,14 @@ Then open your browser to `http://localhost:8000`
 
 ### Mobile Controls
 
-- **Touch-based steering**: Touch left half of screen to steer left, right half to steer right, top 30% for boost
-- **Virtual buttons**: Pixel-art style buttons with SVG icons
+- **Tap to start**: Tap anywhere on the screen once to start the game
+- **Virtual buttons only**: Use pixel-art style buttons with SVG icons for control
   - **Pause button**: Yellow button in top-left corner
-  - **Left arrow**: Green button with teal highlight
-  - **Right arrow**: Green button with teal highlight
-  - **Boost button**: Green button with rocket icon
+  - **Left arrow**: Left arrow button for steering left
+  - **Right arrow**: Right arrow button for steering right
+  - **Boost button**: Up arrow button for speed boost
+- **Full-screen canvas**: Road stretches to fill the entire screen on mobile devices
+- **Optimized positioning**: Control buttons positioned at the bottom to avoid blocking the player car
 - **Enhanced responsiveness**: Optimized physics for mobile devices with faster acceleration and better control
 
 ### 💡 Tips
@@ -132,9 +134,10 @@ Then open your browser to `http://localhost:8000`
 - Hold **↑** while dodging to earn **2x points**
 - Enemy spawn rate increases with your score
 - Some enemies move faster - watch for the yellow glow!
-- On mobile, use touch position on screen or virtual buttons for precise control
+- On mobile, tap the screen once to start, then use virtual buttons for control
 - Your car changes randomly on each restart - try different cars!
 - Game speed is consistent across all devices thanks to frame-rate independent movement
+- On mobile, the game uses full-screen canvas for maximum visibility
 
 ---
 
@@ -225,7 +228,9 @@ racinggame/
 - **SVG icons**: Pixel-perfect icons with crisp rendering
 - **Smooth animations**: Press effects and hover states
 - **Accessibility**: Proper ARIA labels and keyboard navigation
-- **Touch-optimized controls**: Position-based steering and virtual buttons with haptic feedback
+- **Mobile-optimized controls**: Virtual buttons only (no swipe gestures) with haptic feedback
+- **Full-screen mobile**: Canvas adapts to fill entire screen on mobile devices
+- **Smart button placement**: Controls positioned to avoid blocking gameplay
 
 ---
 
@@ -244,11 +249,12 @@ Contributions are welcome! Here's how you can help:
 - 🎨 New car designs and road textures
 - 🎵 Sound effects and background music
 - 🏁 New game modes (time attack, endless mode)
-- 📱 Enhanced mobile touch controls
+- 📱 Additional mobile control schemes
 - 🌍 Multi-language support
 - 🎯 Power-ups and special abilities
 - 🎨 New SVG icon designs
 - ♿ Accessibility improvements
+- 📐 Additional responsive breakpoints for tablets
 
 ---
 
@@ -310,7 +316,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Uniform sizing**: Consistent button dimensions (65px on mobile, 60px on small screens)
 - **Perfect centering**: Flexbox-based icon alignment
 - **Touch optimized**: Large touch targets with haptic feedback
-- **Position-based steering**: Intuitive touch controls - touch left/right half of screen to steer
+- **Button-only control**: Virtual buttons for precise control (no swipe gestures)
+- **Tap to start**: Single tap on screen to begin gameplay
+- **Full-screen experience**: Canvas stretches to fill entire mobile screen
+- **Optimized layout**: Buttons positioned at bottom to avoid blocking game view
 - **Enhanced responsiveness**: Optimized physics parameters for better mobile control
 
 ---

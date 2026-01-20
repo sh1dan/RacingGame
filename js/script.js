@@ -67,12 +67,17 @@ function updateRoadDimensions() {
   shoulderWidth = 40;
   curbWidth = 15;
   roadStartX = shoulderWidth + curbWidth;
-  roadWidth = canvas.width - (roadStartX * 2);
+  // Используем displayWidth для расчетов, так как контекст уже масштабирован
+  roadWidth = displayWidth - (roadStartX * 2);
   laneWidth = roadWidth / 4;
-  roadImageMargin = canvas.width * 0.15;
+  roadImageMargin = displayWidth * 0.15;
   roadImageStartX = roadImageMargin;
-  roadImageWidth = canvas.width - (roadImageMargin * 2);
+  roadImageWidth = displayWidth - (roadImageMargin * 2);
 }
+
+// Store display dimensions for calculations
+let displayWidth = 400;
+let displayHeight = 600;
 
 // Adaptive canvas sizing for mobile
 function resizeCanvas() {
@@ -91,22 +96,39 @@ function resizeCanvas() {
       if (canvasWrapper) {
         const wrapperRect = canvasWrapper.getBoundingClientRect();
         // Используем реальный размер wrapper для canvas, но не меньше минимального
-        const newWidth = Math.max(wrapperRect.width || window.innerWidth, 300);
-        const newHeight = Math.max(wrapperRect.height || (window.innerHeight - 50 - 180), 400);
-        canvas.width = newWidth;
-        canvas.height = newHeight;
-        // Обновляем размеры дороги
+        displayWidth = Math.max(wrapperRect.width || window.innerWidth, 300);
+        displayHeight = Math.max(wrapperRect.height || (window.innerHeight - 50 - 180), 400);
+        
+        // Получаем devicePixelRatio для высокого качества на Retina дисплеях
+        const dpr = window.devicePixelRatio || 1;
+        
+        // Устанавливаем внутренний размер canvas с учетом pixel ratio для четкости
+        canvas.width = displayWidth * dpr;
+        canvas.height = displayHeight * dpr;
+        
+        // Масштабируем контекст для правильного отображения
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        
+        // Устанавливаем CSS размер для отображения
+        canvas.style.width = displayWidth + 'px';
+        canvas.style.height = displayHeight + 'px';
+        
+        // Обновляем размеры дороги (используем display размеры)
         updateRoadDimensions();
+        
         // Инициализируем позицию игрока
         initializePlayerPosition();
       }
     });
   } else {
+    displayWidth = 400;
+    displayHeight = 600;
     canvas.style.width = '400px';
     canvas.style.height = '600px';
     canvas.style.maxWidth = '';
     canvas.width = 400;
     canvas.height = 600;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // Сброс трансформации для десктопа
     // Обновляем размеры дороги для десктопа
     updateRoadDimensions();
     // Инициализируем позицию игрока для десктопа
@@ -128,8 +150,8 @@ window.addEventListener('resize', debounce(() => {
   resizeCanvas();
   // Обновляем позицию игрока после изменения размера canvas
   if (player) {
-    player.x = Math.min(player.x, canvas.width - player.width);
-    player.y = Math.min(player.y, canvas.height - 150);
+    player.x = Math.min(player.x, displayWidth - player.width);
+    player.y = Math.min(player.y, displayHeight - 150);
   }
 }, 200));
 
@@ -423,9 +445,9 @@ const player = {
 
 // Initialize player position after canvas is ready
 function initializePlayerPosition() {
-  if (canvas && canvas.width > 0 && canvas.height > 0) {
-    player.x = canvas.width / 2 - player.width / 2;
-    player.y = canvas.height - 150;
+  if (displayWidth > 0 && displayHeight > 0) {
+    player.x = displayWidth / 2 - player.width / 2;
+    player.y = displayHeight - 150;
   }
 }
 const speedNormal = 4.5, speedBoost = 8; // More balanced speeds (was 5 and 12)
@@ -681,6 +703,7 @@ if (mobileBoost) {
   mobileBoost.addEventListener('touchend', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    // Всегда сбрасываем boost при отпускании кнопки boost
     if (touchTarget === 'button-boost') {
       keys.ArrowUp = false;
       activeTouchId = null;
@@ -691,6 +714,7 @@ if (mobileBoost) {
   mobileBoost.addEventListener('touchcancel', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    // Всегда сбрасываем boost при отмене touch
     if (touchTarget === 'button-boost') {
       keys.ArrowUp = false;
       activeTouchId = null;
@@ -841,6 +865,10 @@ function update() {
     ? roadImageStartX + roadImageWidth - player.width 
     : roadStartX + roadWidth - player.width;
   player.x = Math.max(minX, Math.min(player.x, maxX));
+  
+  // Keep player within canvas bounds
+  player.x = Math.max(0, Math.min(player.x, displayWidth - player.width));
+  player.y = Math.max(0, Math.min(player.y, displayHeight - player.height));
 
   // Enemy movement with speed multiplier (frame-rate independent)
   const mv = keys.ArrowUp ? speedBoost : speedNormal;
@@ -894,7 +922,7 @@ function update() {
   const pointsPerEnemy = isBoosting ? 2 : 1; // Double points when boosting
   
   for (let i = enemies.length - 1; i >= 0; i--) {
-    if (enemies[i].y > canvas.height) {
+    if (enemies[i].y > displayHeight) {
       enemies.splice(i, 1);
       score += pointsPerEnemy;
       sounds.playScore();
@@ -916,37 +944,37 @@ function drawRoad() {
     const roadImageHeight = roadImage.height;
     const roadImageWidth = roadImage.width;
     
-    // Scale image to match canvas width while maintaining aspect ratio
-    const scale = canvas.width / roadImageWidth;
+    // Scale image to match display width while maintaining aspect ratio
+    const scale = displayWidth / roadImageWidth;
     const scaledHeight = roadImageHeight * scale;
     
-    // Create or reuse pattern for seamless tiling
-    if (!roadPatternCache.pattern || 
-        roadPatternCache.scaledHeight !== scaledHeight || 
-        roadPatternCache.canvasWidth !== canvas.width) {
-      
-      // Create a temporary canvas for the pattern tile
-      const patternCanvas = document.createElement('canvas');
-      patternCanvas.width = canvas.width;
-      patternCanvas.height = scaledHeight;
-      const patternCtx = patternCanvas.getContext('2d');
-      
-      // Enable high-quality smoothing
-      patternCtx.imageSmoothingEnabled = true;
-      patternCtx.imageSmoothingQuality = 'high';
-      
-      // Draw the road image scaled to pattern canvas
-      patternCtx.drawImage(
-        roadImage,
-        0, 0, roadImageWidth, roadImageHeight,
-        0, 0, canvas.width, scaledHeight
-      );
-      
-      // Create pattern that repeats vertically
-      roadPatternCache.pattern = ctx.createPattern(patternCanvas, 'repeat-y');
-      roadPatternCache.scaledHeight = scaledHeight;
-      roadPatternCache.canvasWidth = canvas.width;
-    }
+      // Create or reuse pattern for seamless tiling
+      if (!roadPatternCache.pattern || 
+          roadPatternCache.scaledHeight !== scaledHeight || 
+          roadPatternCache.canvasWidth !== displayWidth) {
+        
+        // Create a temporary canvas for the pattern tile
+        const patternCanvas = document.createElement('canvas');
+        patternCanvas.width = displayWidth;
+        patternCanvas.height = scaledHeight;
+        const patternCtx = patternCanvas.getContext('2d');
+        
+        // Enable high-quality smoothing
+        patternCtx.imageSmoothingEnabled = true;
+        patternCtx.imageSmoothingQuality = 'high';
+        
+        // Draw the road image scaled to pattern canvas
+        patternCtx.drawImage(
+          roadImage,
+          0, 0, roadImageWidth, roadImageHeight,
+          0, 0, displayWidth, scaledHeight
+        );
+        
+        // Create pattern that repeats vertically
+        roadPatternCache.pattern = ctx.createPattern(patternCanvas, 'repeat-y');
+        roadPatternCache.scaledHeight = scaledHeight;
+        roadPatternCache.canvasWidth = displayWidth;
+      }
     
     // Normalize offset to prevent floating point accumulation errors
     let normalizedOffset = roadOffset;
@@ -962,25 +990,25 @@ function drawRoad() {
     ctx.fillStyle = roadPatternCache.pattern;
     
     // Fill a larger area to ensure complete coverage
-    ctx.fillRect(0, -scaledHeight, canvas.width, canvas.height + scaledHeight * 2);
+    ctx.fillRect(0, -scaledHeight, displayWidth, displayHeight + scaledHeight * 2);
     
     ctx.restore();
   } else {
     // Fallback: Draw brown shoulders (outer edges)
     ctx.fillStyle = "#8b6f47"; // Brown dirt/gravel
-    ctx.fillRect(0, 0, shoulderWidth, canvas.height);
-    ctx.fillRect(canvas.width - shoulderWidth, 0, shoulderWidth, canvas.height);
+    ctx.fillRect(0, 0, shoulderWidth, displayHeight);
+    ctx.fillRect(displayWidth - shoulderWidth, 0, shoulderWidth, displayHeight);
     
     // Draw gray curbs
     ctx.fillStyle = "#a0a0a0"; // Light gray
-    ctx.fillRect(shoulderWidth, 0, curbWidth, canvas.height);
-    ctx.fillRect(canvas.width - shoulderWidth - curbWidth, 0, curbWidth, canvas.height);
+    ctx.fillRect(shoulderWidth, 0, curbWidth, displayHeight);
+    ctx.fillRect(displayWidth - shoulderWidth - curbWidth, 0, curbWidth, displayHeight);
     
     // Draw animated road texture with smooth movement
     ctx.save();
     ctx.translate(0, roadOffset);
     ctx.fillStyle = asphaltPattern;
-    ctx.fillRect(roadStartX, -60, roadWidth, canvas.height + 60);
+    ctx.fillRect(roadStartX, -60, roadWidth, displayHeight + 60);
     ctx.restore();
     
     // Reset roadOffset for seamless loop
@@ -990,8 +1018,14 @@ function drawRoad() {
   }
 }
 function draw() {
-  ctx.setTransform(1,0,0,1,0,0);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // На мобильных не сбрасываем трансформацию (она уже установлена с учетом dpr)
+  // На десктопе сбрасываем трансформацию
+  // Используем функцию напрямую для определения мобильного устройства
+  if (!isMobileDevice()) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  // Используем display размеры для clearRect, так как контекст уже масштабирован
+  ctx.clearRect(0, 0, displayWidth, displayHeight);
 
   // Don't draw anything until all images are loaded
   if (!allImagesReady) {
@@ -1000,7 +1034,7 @@ function draw() {
     ctx.font = "bold 20px 'Press Start 2P'";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("Loading...", canvas.width / 2, canvas.height / 2);
+    ctx.fillText("Loading...", displayWidth / 2, displayHeight / 2);
     return;
   }
 
@@ -1014,8 +1048,8 @@ function draw() {
     ctx.beginPath();
     // Use same offset as road texture for perfect synchronization
     // Draw line with offset matching road texture translate
-    ctx.moveTo(canvas.width/2, -60 + roadOffset);
-    ctx.lineTo(canvas.width/2, canvas.height + 60 + roadOffset);
+    ctx.moveTo(displayWidth/2, -60 + roadOffset);
+    ctx.lineTo(displayWidth/2, displayHeight + 60 + roadOffset);
     ctx.stroke();
     ctx.setLineDash([]);
   }
@@ -1056,7 +1090,11 @@ function draw() {
     ctx.restore();
   });
 
-  ctx.setTransform(1,0,0,1,0,0);
+  // Не сбрасываем трансформацию здесь - она нужна для правильного масштабирования на мобильных
+  // Используем функцию напрямую для определения мобильного устройства
+  if (!isMobileDevice()) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
   ctx.font = "bold 32px 'Press Start 2P'";
   ctx.fillStyle = "yellow";
   ctx.textAlign = "center";
@@ -1064,7 +1102,7 @@ function draw() {
   ctx.shadowColor = "black";
   ctx.shadowBlur = 6;
   const txt = gameStarted ? score : 0;
-  ctx.fillText(txt, canvas.width/2, 10);
+  ctx.fillText(txt, displayWidth/2, 10);
   
   // Show speed boost multiplier indicator
   if (gameStarted && !gameOver && keys.ArrowUp) {
@@ -1074,7 +1112,7 @@ function draw() {
     ctx.textBaseline = "top";
     ctx.shadowColor = "black";
     ctx.shadowBlur = 4;
-    ctx.fillText("2x POINTS", canvas.width/2, 50);
+    ctx.fillText("2x POINTS", displayWidth/2, 50);
   }
 
   if (gameOver) {
