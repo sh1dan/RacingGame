@@ -245,8 +245,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Yan Riabonenko**
 
-- GitHub: [@YanRiabonenko](https://github.com/YanRiabonenko)
-- Twitter: [@YanRiabonenko](https://twitter.com/YanRiabonenko)
+- GitHub: [@YanRiabonenko](https://github.com/sh1dan)
+- Twitter: [@YanRiabonenko](https://twitter.com/YourAnonSh1dan)
 
 ---
 
