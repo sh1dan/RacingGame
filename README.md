@@ -59,6 +59,8 @@ Racing Game is an engaging top-down racing game where players dodge enemy cars w
 - ⏱️ **Frame-Rate Independent**: DeltaTime-based movement ensures consistent speed across all devices
 - 📱 **Mobile-First**: Full-screen canvas on mobile with virtual button controls and haptic feedback support
 - 🎨 **Seamless Road Tiling**: Canvas pattern-based road rendering eliminates visible seams
+- 📱 **Retina Display Support**: High-quality rendering on Retina/high-DPI displays using devicePixelRatio
+- 🎨 **Adaptive Canvas Sizing**: Dynamic canvas resolution adjustment for optimal quality and performance
 
 ---
 
@@ -222,6 +224,8 @@ racinggame/
 - **Multi-lane design** with proper boundaries
 - **Visual feedback** with road animation synchronized to speed
 - **Optimized rendering** using pattern caching for better performance
+- **High-DPI support** with devicePixelRatio scaling for crisp graphics on Retina displays
+- **Adaptive resolution** that adjusts canvas internal resolution based on display pixel density
 
 ### UI System
 - **Responsive buttons**: Uniform sizing and styling across all devices
@@ -283,9 +287,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Project Stats
 
-- **Total Lines of Code**: ~2364
-  - CSS: 1172 lines (style.css)
-  - JavaScript: 1191 lines (script.js: 1104, leaderboard.js: 87)
+- **Total Lines of Code**: ~2400+
+  - CSS: ~1250 lines (style.css)
+  - JavaScript: ~1160 lines (script.js: ~1070, leaderboard.js: 87)
   - HTML: ~180 lines (index.html + leaderboard.html)
 - **Files**: 15+
 - **Dependencies**: 0 (pure vanilla JavaScript)
@@ -299,6 +303,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Player Cars**: 2 (Mercedes G63, Porsche 911 GT3 RS) - randomly selected on each restart
 - **Enemy Cars**: 1 (enemycar.png)
 - **Frame Rate**: 60 FPS with deltaTime-based movement for consistent speed across devices
+- **Canvas Rendering**: High-DPI support with devicePixelRatio scaling for Retina displays
+- **Mobile Optimization**: Full-screen adaptive canvas with optimized button controls
 
 ---
 
@@ -321,6 +327,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Full-screen experience**: Canvas stretches to fill entire mobile screen
 - **Optimized layout**: Buttons positioned at bottom to avoid blocking game view
 - **Enhanced responsiveness**: Optimized physics parameters for better mobile control
+- **High-quality rendering**: Retina display support ensures crisp, clear graphics on high-DPI mobile screens
+- **Fixed boost control**: Properly handles boost button release even when other buttons are pressed simultaneously
 
 ---
 

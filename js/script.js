@@ -97,7 +97,8 @@ function resizeCanvas() {
         const wrapperRect = canvasWrapper.getBoundingClientRect();
         // Используем реальный размер wrapper для canvas, но не меньше минимального
         displayWidth = Math.max(wrapperRect.width || window.innerWidth, 300);
-        displayHeight = Math.max(wrapperRect.height || (window.innerHeight - 50 - 180), 400);
+        // Увеличиваем высоту canvas на мобильных - используем больше пространства экрана
+        displayHeight = Math.max(wrapperRect.height || (window.innerHeight - 50 - 100), 500);
         
         // Получаем devicePixelRatio для высокого качества на Retina дисплеях
         const dpr = window.devicePixelRatio || 1;
@@ -681,10 +682,13 @@ if (mobileRight) {
 }
 
 if (mobileBoost) {
+  let boostTouchId = null; // Отдельный идентификатор для boost кнопки
+  
   mobileBoost.addEventListener('touchstart', (e) => {
     e.preventDefault();
     e.stopPropagation(); // Prevent canvas touch handler
     const touch = e.touches[0];
+    boostTouchId = touch.identifier; // Сохраняем идентификатор для boost
     activeTouchId = touch.identifier;
     touchTarget = 'button-boost';
     hapticFeedback(30);
@@ -703,22 +707,31 @@ if (mobileBoost) {
   mobileBoost.addEventListener('touchend', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    // Всегда сбрасываем boost при отпускании кнопки boost
-    if (touchTarget === 'button-boost') {
+    // Проверяем, что это событие относится к boost кнопке по идентификатору touch
+    const endedTouch = Array.from(e.changedTouches).find(t => t.identifier === boostTouchId);
+    if (endedTouch || e.target === mobileBoost || e.currentTarget === mobileBoost) {
+      // Всегда сбрасываем boost если это событие от boost кнопки
       keys.ArrowUp = false;
-      activeTouchId = null;
-      touchTarget = null;
+      if (touchTarget === 'button-boost' || boostTouchId !== null) {
+        activeTouchId = null;
+        touchTarget = null;
+        boostTouchId = null;
+      }
     }
   }, { passive: false });
   
   mobileBoost.addEventListener('touchcancel', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    // Всегда сбрасываем boost при отмене touch
-    if (touchTarget === 'button-boost') {
+    // Всегда сбрасываем boost при отмене touch для boost кнопки
+    const cancelledTouch = Array.from(e.changedTouches).find(t => t.identifier === boostTouchId);
+    if (cancelledTouch || e.target === mobileBoost || e.currentTarget === mobileBoost) {
       keys.ArrowUp = false;
-      activeTouchId = null;
-      touchTarget = null;
+      if (touchTarget === 'button-boost' || boostTouchId !== null) {
+        activeTouchId = null;
+        touchTarget = null;
+        boostTouchId = null;
+      }
     }
   }, { passive: false });
 }
