@@ -121,7 +121,7 @@ Then open your browser to `http://localhost:8000`
 
 ### Mobile Controls
 
-- **Tap to start**: Tap anywhere on the screen once to start the game
+- **Tap to start**: Tap your car to start the game
 - **Virtual buttons only**: Use pixel-art style buttons with SVG icons for control
   - **Pause button**: Yellow button in top-left corner
   - **Left arrow**: Left arrow button for steering left
@@ -136,7 +136,7 @@ Then open your browser to `http://localhost:8000`
 - Hold **↑** while dodging to earn **2x points**
 - Enemy spawn rate increases with your score
 - Some enemies move faster - watch for the yellow glow!
-- On mobile, tap the screen once to start, then use virtual buttons for control
+- On mobile, tap your car to start, then use virtual buttons for control
 - Your car changes randomly on each restart - try different cars!
 - Game speed is consistent across all devices thanks to frame-rate independent movement
 - On mobile, the game uses full-screen canvas for maximum visibility
@@ -323,7 +323,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Perfect centering**: Flexbox-based icon alignment
 - **Touch optimized**: Large touch targets with haptic feedback
 - **Button-only control**: Virtual buttons for precise control (no swipe gestures)
-- **Tap to start**: Single tap on screen to begin gameplay
+- **Tap to start**: Single tap on your car to begin gameplay
 - **Full-screen experience**: Canvas stretches to fill entire mobile screen
 - **Optimized layout**: Buttons positioned at bottom to avoid blocking game view
 - **Enhanced responsiveness**: Optimized physics parameters for better mobile control

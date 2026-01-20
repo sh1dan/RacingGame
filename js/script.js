@@ -98,7 +98,7 @@ function resizeCanvas() {
         // Используем реальный размер wrapper для canvas, но не меньше минимального
         displayWidth = Math.max(wrapperRect.width || window.innerWidth, 300);
         // Увеличиваем высоту canvas на мобильных - используем больше пространства экрана, минус 4px
-        displayHeight = Math.max(wrapperRect.height || (window.innerHeight - 50 - 100 - 10), 496);
+        displayHeight = Math.max(wrapperRect.height || (window.innerHeight - 50 - 100 - 14), 496);
         
         // Получаем devicePixelRatio для высокого качества на Retina дисплеях
         const dpr = window.devicePixelRatio || 1;
@@ -548,18 +548,51 @@ window.addEventListener('keyup', e => {
   keys[e.key] = false;
 });
 
-// Touch start on canvas for mobile - start game on first tap
+// Touch start on canvas for mobile - start game on tap on player car
 canvas.addEventListener('touchstart', (e) => {
   // Only handle on mobile devices, if game hasn't started yet, and tap is directly on canvas
   const isMobile = isMobileDevice();
   if (isMobile && !gameStarted && !gameOver && e.target === canvas) {
     // Buttons call stopPropagation, so if we get here, it's not a button
     e.preventDefault();
-    gameStarted = true;
-    lastSpawnTime = Date.now();
-    sounds.playEngine();
-    updateMobileControlsVisibility(isMobile);
-    hapticFeedback(30);
+    
+    // Убеждаемся, что позиция игрока инициализирована
+    if (displayWidth === 0 || displayHeight === 0 || player.x === 0 || player.y === 0) {
+      // Если позиция не инициализирована, инициализируем её
+      initializePlayerPosition();
+    }
+    
+    // Get touch coordinates relative to canvas
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    const touchX = touch.clientX - rect.left;
+    const touchY = touch.clientY - rect.top;
+    
+    // На мобильных:
+    // - canvas.style.width/height = displayWidth/displayHeight (CSS размеры)
+    // - canvas.width/height = displayWidth/displayHeight * dpr (внутренние размеры)
+    // - ctx.setTransform(dpr, 0, 0, dpr, 0, 0) масштабирует контекст
+    // - player.x/y находятся в display координатах (используются в масштабированном контексте)
+    // - rect.width/height = displayWidth/displayHeight (CSS размеры)
+    // - touchX/touchY уже в display координатах относительно CSS размеров
+    
+    // Check if touch is within player car bounds (with some tolerance for easier tapping)
+    const tolerance = 5; // Небольшой допуск для удобства тапа
+    const carLeft = player.x - tolerance;
+    const carRight = player.x + player.width + tolerance;
+    const carTop = player.y - tolerance;
+    const carBottom = player.y + player.height + tolerance;
+    
+    // Используем touchX и touchY напрямую, так как они уже в display координатах
+    if (touchX >= carLeft && touchX <= carRight && 
+        touchY >= carTop && touchY <= carBottom) {
+      // Touch is on the player car - start the game
+      gameStarted = true;
+      lastSpawnTime = Date.now();
+      sounds.playEngine();
+      updateMobileControlsVisibility(isMobile);
+      hapticFeedback(30);
+    }
   }
 }, { passive: false });
 
