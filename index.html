@@ -4,31 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Racing Game</title>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="game.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Quantico:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/game.css">
 </head>
 <body>
   <header>
     <div class="logo">
       <a href="index.html">
-        <img src="images/logo.svg" alt="Racing Game Logo" class="logo-img">
+        <img src="assets/images/logo.svg" alt="Racing Game Logo" class="logo-img">
       </a>
     </div>
     <nav>
       <a href="index.html">Game</a>
       <a href="leaderboard.html">Leaderboard</a>
     </nav>
-    <a href="#" class="privacy">Privacy Policy</a>
   </header>
 
   <div class="full-layout">
-    <div></div>
     <div class="canvas-column">
-      <canvas id="gameCanvas" width="400" height="600"></canvas>
-
-      <!-- Game Over Overlay -->
-      <div id="gameOverScreen" class="hidden">
+      <div class="canvas-wrapper">
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        
+        <!-- Game Over Overlay -->
+        <div id="gameOverBackdrop" class="hidden"></div>
+        <div id="gameOverScreen" class="hidden">
         <div class="score-block">
           <div class="label">SCORE</div>
           <div class="value" id="finalScore">0</div>
@@ -40,10 +42,11 @@
           <button id="shareBtn">SHARE</button>
         </div>
         <button id="leaderboardBtn">ADD TO LEADERBOARD</button>
+        </div>
       </div>
     </div>
     <aside class="info-box">
-      <img src="images/logo.svg" alt="Racing Game Logo" class="logo-img">
+      <img src="assets/images/logo.svg" alt="Racing Game Logo" class="logo-img">
       <p> Use <strong>←</strong> and <strong>→</strong> to dodge enemy cars, hold <strong>↑</strong> for a speed boost,
         and press <strong>R</strong> to restart after Game Over.</p>
       <p>Built with HTML5, CSS3, and JavaScript — no installation required!</p>
@@ -52,6 +55,6 @@
     </aside>
   </div>
 
-  <script src="script.js"></script>
+  <script src="js/script.js"></script>
 </body>
 </html>
