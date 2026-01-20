@@ -287,14 +287,13 @@ header nav a.active:hover {
     box-sizing: border-box;
   }
   
-  /* Canvas - responsive, maintain aspect ratio */
+  /* Canvas - responsive, full size on mobile */
   canvas {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    max-height: calc(100vh - 50px - 180px) !important; /* Account for header height and info-box */
-    object-fit: contain;
-    aspect-ratio: 400 / 600;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: calc(100vh - 50px - 180px) !important; /* Account for header height and info-box */
+    max-height: calc(100vh - 50px - 180px) !important;
+    object-fit: fill;
     display: block !important;
     margin: 0 auto !important;
     padding: 0 !important;
@@ -317,7 +316,7 @@ header nav a.active:hover {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    padding: 0 20px 20px;
+    padding: 0 20px 15px; /* Кнопки внизу с небольшим отступом для удобства */
     box-sizing: border-box;
   }
   
@@ -521,8 +520,11 @@ header nav a.active:hover {
   }
   
   canvas {
-    width: calc(100vw - 16px) !important;
-    max-width: calc(100vw - 16px) !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: calc(100vh - 50px - 180px) !important;
+    max-height: calc(100vh - 50px - 180px) !important;
+    object-fit: fill;
     margin: 0 auto !important;
   }
   
@@ -745,22 +747,24 @@ canvas.loaded {
   opacity: 1;
 }
 
-/* Responsive canvas for mobile */
-@media (max-width: 768px) {
-  canvas {
-    width: 100% !important;
-    max-width: 400px !important;
-    height: auto !important;
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+  /* Responsive canvas for mobile */
+  @media (max-width: 768px) {
+    canvas {
+      width: 100vw !important;
+      max-width: 100vw !important;
+      height: calc(100vh - 50px - 180px) !important;
+      max-height: calc(100vh - 50px - 180px) !important;
+      object-fit: fill;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    
+    .canvas-wrapper {
+      width: 100vw;
+      max-width: 100vw;
+    }
   }
-  
-  .canvas-wrapper {
-    width: 100%;
-    max-width: 400px;
-  }
-}
 
 /* ====== Game Over Overlay Styles ====== */
 #gameOverScreen.hidden {

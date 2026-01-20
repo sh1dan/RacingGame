@@ -48,6 +48,32 @@ function hapticFeedback(pattern = 50) {
   }
 }
 
+// Road dimensions (will be recalculated when canvas resizes)
+// MUST be declared before resizeCanvas() and updateRoadDimensions()
+let shoulderWidth = 40; // Brown shoulder on each side
+let curbWidth = 15; // Gray curb between shoulder and road
+let roadStartX = 0;
+let roadWidth = 0;
+let laneWidth = 0;
+
+// Road boundaries for image-based road (approximate - adjust based on your image)
+// Assuming road image has ~15% shoulders/curbs on each side
+let roadImageMargin = 0; // Margin for shoulders/curbs on each side
+let roadImageStartX = 0;
+let roadImageWidth = 0;
+
+// Function to recalculate road dimensions when canvas size changes
+function updateRoadDimensions() {
+  shoulderWidth = 40;
+  curbWidth = 15;
+  roadStartX = shoulderWidth + curbWidth;
+  roadWidth = canvas.width - (roadStartX * 2);
+  laneWidth = roadWidth / 4;
+  roadImageMargin = canvas.width * 0.15;
+  roadImageStartX = roadImageMargin;
+  roadImageWidth = canvas.width - (roadImageMargin * 2);
+}
+
 // Adaptive canvas sizing for mobile
 function resizeCanvas() {
   const isMobile = isMobileDevice();
@@ -58,16 +84,54 @@ function resizeCanvas() {
     canvas.style.width = '';
     canvas.style.height = '';
     canvas.style.maxWidth = '';
+    // Устанавливаем размер canvas на основе реального размера экрана
+    // Используем requestAnimationFrame чтобы убедиться что CSS применился
+    requestAnimationFrame(() => {
+      const canvasWrapper = canvas.parentElement;
+      if (canvasWrapper) {
+        const wrapperRect = canvasWrapper.getBoundingClientRect();
+        // Используем реальный размер wrapper для canvas, но не меньше минимального
+        const newWidth = Math.max(wrapperRect.width || window.innerWidth, 300);
+        const newHeight = Math.max(wrapperRect.height || (window.innerHeight - 50 - 180), 400);
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        // Обновляем размеры дороги
+        updateRoadDimensions();
+        // Инициализируем позицию игрока
+        initializePlayerPosition();
+      }
+    });
   } else {
     canvas.style.width = '400px';
     canvas.style.height = '600px';
     canvas.style.maxWidth = '';
+    canvas.width = 400;
+    canvas.height = 600;
+    // Обновляем размеры дороги для десктопа
+    updateRoadDimensions();
+    // Инициализируем позицию игрока для десктопа
+    initializePlayerPosition();
   }
 }
 
 // Resize on load and window resize (debounced for performance)
-resizeCanvas();
-window.addEventListener('resize', debounce(resizeCanvas, 200));
+// Wait for DOM to be ready before initializing canvas
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    resizeCanvas();
+  });
+} else {
+  resizeCanvas();
+}
+
+window.addEventListener('resize', debounce(() => {
+  resizeCanvas();
+  // Обновляем позицию игрока после изменения размера canvas
+  if (player) {
+    player.x = Math.min(player.x, canvas.width - player.width);
+    player.y = Math.min(player.y, canvas.height - 150);
+  }
+}, 200));
 
 // ====== Constants & Assets ======
 const centerLineWidth = 6;
@@ -342,11 +406,12 @@ const asphaltPattern = ctx.createPattern(tile, "repeat");
 // ====== Player & Game State ======
 // Improved parameters for better mobile responsiveness
 const isMobile = isMobileDevice();
+// Player will be initialized after canvas is sized
 const player = {
   width: 35,
   height: 70,
-  x: canvas.width / 2 - 17.5,
-  y: canvas.height - 150,
+  x: 0, // Will be set after canvas initialization
+  y: 0, // Will be set after canvas initialization
   speed: 5, // Legacy, not used
   velocity: 0, // Horizontal velocity for smooth movement
   // Mobile: faster response, desktop: smoother control
@@ -355,6 +420,14 @@ const player = {
   friction: isMobile ? 0.88 : 0.92, // Less friction on mobile for quicker stops (was 0.92)
   decelerationRate: isMobile ? 0.25 : 0.15 // Faster direction change on mobile (was 0.15)
 };
+
+// Initialize player position after canvas is ready
+function initializePlayerPosition() {
+  if (canvas && canvas.width > 0 && canvas.height > 0) {
+    player.x = canvas.width / 2 - player.width / 2;
+    player.y = canvas.height - 150;
+  }
+}
 const speedNormal = 4.5, speedBoost = 8; // More balanced speeds (was 5 and 12)
 let score = 0;
 let bestScore = 0;
@@ -370,25 +443,9 @@ let lastSpawnTime = 0;
 let roadOffset = 0; // For road animation
 let lastFrameTime = performance.now(); // For deltaTime calculation
 
-// Touch controls - Improved for better responsiveness
-let touchStartX = 0;
-let touchStartY = 0;
-let isTouching = false;
+// Touch controls - Only for buttons, not canvas
 let activeTouchId = null; // Track specific touch for multi-touch support
-let touchTarget = null; // Track which element was touched (canvas or button)
-
-// Road dimensions (defined here so they can be used in multiple functions)
-const shoulderWidth = 40; // Brown shoulder on each side
-const curbWidth = 15; // Gray curb between shoulder and road
-const roadStartX = shoulderWidth + curbWidth;
-const roadWidth = canvas.width - (roadStartX * 2);
-const laneWidth = roadWidth / 4; // 4 lanes
-
-// Road boundaries for image-based road (approximate - adjust based on your image)
-// Assuming road image has ~15% shoulders/curbs on each side
-const roadImageMargin = canvas.width * 0.15; // Margin for shoulders/curbs on each side
-const roadImageStartX = roadImageMargin;
-const roadImageWidth = canvas.width - (roadImageMargin * 2);
+let touchTarget = null; // Track which element was touched (button only)
 
 // ====== Overlay Elements ======
 const gameOverBackdrop  = document.getElementById('gameOverBackdrop');
@@ -464,127 +521,18 @@ window.addEventListener('keyup', e => {
   keys[e.key] = false;
 });
 
-// Touch controls for mobile - Improved responsiveness
-// Direct position-based control: touch left side = left, right side = right
+// Touch start on canvas for mobile - start game on first tap
 canvas.addEventListener('touchstart', (e) => {
-  // Only handle touches directly on canvas (not on buttons)
-  if (e.target !== canvas) return;
-  
-  e.preventDefault();
-  const touch = e.touches[0];
-  activeTouchId = touch.identifier;
-  touchTarget = 'canvas';
-  
-  // Get canvas position relative to viewport
-  const rect = canvas.getBoundingClientRect();
-  const touchX = touch.clientX - rect.left;
-  const touchY = touch.clientY - rect.top;
-  
-  // Normalize touch position to canvas coordinates (0-1)
-  const normalizedX = touchX / rect.width;
-  const normalizedY = touchY / rect.height;
-  
-  // Direct position-based control: more intuitive and responsive
-  // Left half of canvas = left, right half = right
-  // Top 30% = boost
-  if (normalizedY < 0.3) {
-    // Top area: boost
-    keys.ArrowUp = true;
-  } else if (normalizedX < 0.5) {
-    // Left half: move left
-    keys.ArrowLeft = true;
-    keys.ArrowRight = false;
-  } else {
-    // Right half: move right
-    keys.ArrowRight = true;
-    keys.ArrowLeft = false;
-  }
-  
-  touchStartX = touch.clientX;
-  touchStartY = touch.clientY;
-  isTouching = true;
-  
-  if (!gameStarted && !gameOver) {
+  // Only handle on mobile devices, if game hasn't started yet, and tap is directly on canvas
+  const isMobile = isMobileDevice();
+  if (isMobile && !gameStarted && !gameOver && e.target === canvas) {
+    // Buttons call stopPropagation, so if we get here, it's not a button
+    e.preventDefault();
     gameStarted = true;
     lastSpawnTime = Date.now();
     sounds.playEngine();
-    const isMobile = isMobileDevice();
     updateMobileControlsVisibility(isMobile);
-  }
-}, { passive: false });
-
-canvas.addEventListener('touchmove', (e) => {
-  if (touchTarget !== 'canvas' || !isTouching || gamePaused || gameOver) return;
-  
-  e.preventDefault();
-  
-  // Find the active touch
-  const touch = Array.from(e.touches).find(t => t.identifier === activeTouchId);
-  if (!touch) return;
-  
-  // Get canvas position relative to viewport
-  const rect = canvas.getBoundingClientRect();
-  const touchX = touch.clientX - rect.left;
-  const touchY = touch.clientY - rect.top;
-  
-  // Normalize touch position to canvas coordinates (0-1)
-  const normalizedX = touchX / rect.width;
-  const normalizedY = touchY / rect.height;
-  
-  // Update controls based on current touch position (more responsive)
-  if (normalizedY < 0.3) {
-    // Top area: boost
-    keys.ArrowUp = true;
-    keys.ArrowLeft = false;
-    keys.ArrowRight = false;
-  } else if (normalizedX < 0.5) {
-    // Left half: move left
-    keys.ArrowLeft = true;
-    keys.ArrowRight = false;
-    keys.ArrowUp = false;
-  } else {
-    // Right half: move right
-    keys.ArrowRight = true;
-    keys.ArrowLeft = false;
-    keys.ArrowUp = false;
-  }
-  
-  // Update touch position for tracking
-  touchStartX = touch.clientX;
-  touchStartY = touch.clientY;
-}, { passive: false });
-
-canvas.addEventListener('touchend', (e) => {
-  if (touchTarget !== 'canvas') return;
-  
-  e.preventDefault();
-  
-  // Only clear if this was our active touch
-  const endedTouch = Array.from(e.changedTouches).find(t => t.identifier === activeTouchId);
-  if (endedTouch) {
-    isTouching = false;
-    activeTouchId = null;
-    touchTarget = null;
-    keys.ArrowLeft = false;
-    keys.ArrowRight = false;
-    keys.ArrowUp = false;
-  }
-}, { passive: false });
-
-canvas.addEventListener('touchcancel', (e) => {
-  if (touchTarget !== 'canvas') return;
-  
-  e.preventDefault();
-  
-  // Only clear if this was our active touch
-  const endedTouch = Array.from(e.changedTouches).find(t => t.identifier === activeTouchId);
-  if (endedTouch) {
-    isTouching = false;
-    activeTouchId = null;
-    touchTarget = null;
-    keys.ArrowLeft = false;
-    keys.ArrowRight = false;
-    keys.ArrowUp = false;
+    hapticFeedback(30);
   }
 }, { passive: false });
 
@@ -1146,7 +1094,7 @@ function restartGame() {
   gameStarted = false;
   gameOver = false;
   gamePaused = false;
-  player.x = canvas.width/2 - player.width/2;
+  initializePlayerPosition();
   player.velocity = 0;
   roadOffset = 0;
   lastSpawnTime = Date.now();
