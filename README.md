@@ -140,7 +140,7 @@ Then open your browser to `http://localhost:8000`
 
 ## 📸 Screenshots
 
-> *Gameplay screenshot would go here*
+> https://tikolu.net/i/vgxox
 
 ### Game Features Showcase
 
