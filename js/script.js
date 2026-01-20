@@ -2,6 +2,10 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+// Enable high-quality image smoothing for better road rendering
+ctx.imageSmoothingEnabled = true;
+ctx.imageSmoothingQuality = 'high';
+
 // ====== Utility Functions ======
 
 /**
@@ -67,11 +71,30 @@ window.addEventListener('resize', debounce(resizeCanvas, 200));
 
 // ====== Constants & Assets ======
 const centerLineWidth = 6;
-const enemyCar = new Image();
-const car = new Image();
+const enemyCar = new Image(); // Legacy - kept for backward compatibility
+const car = new Image(); // Current player car (will be randomly selected)
 const roadImage = new Image();
+
+// Array of player car images for variety
+const playerCars = [
+  new Image(), // Mercedes G63
+  new Image()  // Porsche 911 GT3 RS
+];
+const playerCarPaths = [
+  "assets/images/cars/mercedesG63.svg",
+  "assets/images/cars/porsche911GT3rs.svg"
+];
+
+// Array of enemy car images (only one car for enemies)
+const enemyCars = [
+  new Image() // Original enemy car
+];
+const enemyCarPaths = [
+  "assets/images/enemycar.png"
+];
+
 let imagesLoaded = 0;
-const totalImages = 3;
+const totalImages = 1 + playerCars.length + 1 + enemyCars.length; // Road (1) + player cars + enemyCar legacy (1) + enemy cars
 let allImagesReady = false;
 
 // ====== Audio System ======
@@ -179,18 +202,49 @@ function loadImage(img, src) {
 
 // Load images
 Promise.all([
-  loadImage(enemyCar, "assets/images/enemycar.png"),
-  loadImage(car, "assets/images/car.png"),
-  loadImage(roadImage, "assets/images/road.png")
+  loadImage(roadImage, "assets/images/road.png"),
+  // Load all player car variants
+  ...playerCars.map((img, index) => loadImage(img, playerCarPaths[index])),
+  // Load all enemy car variants
+  loadImage(enemyCar, "assets/images/enemycar.png"), // Legacy support
+  ...enemyCars.map((img, index) => loadImage(img, enemyCarPaths[index]))
 ]).then(() => {
   console.log("All images loaded");
   allImagesReady = true;
+  
+  // Select random player car after all images are loaded
+  selectRandomPlayerCar();
+  
   // Show canvas after all images are loaded
   const canvas = document.getElementById("gameCanvas");
   if (canvas) {
     canvas.classList.add("loaded");
   }
 });
+
+/**
+ * Selects a random player car from available cars
+ */
+function selectRandomPlayerCar() {
+  const randomIndex = Math.floor(Math.random() * playerCars.length);
+  const selectedCar = playerCars[randomIndex];
+  
+  // Use the selected car image directly
+  // Since all images are already loaded, we can safely use the selected one
+  if (selectedCar.complete && selectedCar.naturalWidth > 0) {
+    // Copy src to main car object
+    car.src = selectedCar.src;
+    console.log(`Player car selected: ${playerCarPaths[randomIndex]}`);
+  } else {
+    // Wait for image to load if not ready yet
+    const originalOnload = selectedCar.onload;
+    selectedCar.onload = () => {
+      car.src = selectedCar.src;
+      console.log(`Player car selected: ${playerCarPaths[randomIndex]}`);
+      if (originalOnload) originalOnload.call(selectedCar);
+    };
+  }
+}
 
 // Smooth asphalt pattern optimized for movement
 const tile = document.createElement("canvas");
@@ -286,18 +340,22 @@ tctx.fillRect(0, 0, 40, 40);
 const asphaltPattern = ctx.createPattern(tile, "repeat");
 
 // ====== Player & Game State ======
+// Improved parameters for better mobile responsiveness
+const isMobile = isMobileDevice();
 const player = {
   width: 35,
   height: 70,
   x: canvas.width / 2 - 17.5,
   y: canvas.height - 150,
-  speed: 5,
+  speed: 5, // Legacy, not used
   velocity: 0, // Horizontal velocity for smooth movement
-  maxSpeed: 8,
-  acceleration: 0.5,
-  friction: 0.85
+  // Mobile: faster response, desktop: smoother control
+  maxSpeed: isMobile ? 7 : 6, // Slightly faster on mobile for better responsiveness
+  acceleration: isMobile ? 1.2 : 0.8, // Much faster acceleration on mobile (was 0.8)
+  friction: isMobile ? 0.88 : 0.92, // Less friction on mobile for quicker stops (was 0.92)
+  decelerationRate: isMobile ? 0.25 : 0.15 // Faster direction change on mobile (was 0.15)
 };
-const speedNormal = 5, speedBoost = 12;
+const speedNormal = 4.5, speedBoost = 8; // More balanced speeds (was 5 and 12)
 let score = 0;
 let bestScore = 0;
 try {
@@ -310,11 +368,14 @@ let gameStarted = false, gameOver = false, gamePaused = false;
 const enemies = [], keys = {};
 let lastSpawnTime = 0;
 let roadOffset = 0; // For road animation
+let lastFrameTime = performance.now(); // For deltaTime calculation
 
-// Touch controls
+// Touch controls - Improved for better responsiveness
 let touchStartX = 0;
 let touchStartY = 0;
 let isTouching = false;
+let activeTouchId = null; // Track specific touch for multi-touch support
+let touchTarget = null; // Track which element was touched (canvas or button)
 
 // Road dimensions (defined here so they can be used in multiple functions)
 const shoulderWidth = 40; // Brown shoulder on each side
@@ -403,10 +464,42 @@ window.addEventListener('keyup', e => {
   keys[e.key] = false;
 });
 
-// Touch controls for mobile
+// Touch controls for mobile - Improved responsiveness
+// Direct position-based control: touch left side = left, right side = right
 canvas.addEventListener('touchstart', (e) => {
+  // Only handle touches directly on canvas (not on buttons)
+  if (e.target !== canvas) return;
+  
   e.preventDefault();
   const touch = e.touches[0];
+  activeTouchId = touch.identifier;
+  touchTarget = 'canvas';
+  
+  // Get canvas position relative to viewport
+  const rect = canvas.getBoundingClientRect();
+  const touchX = touch.clientX - rect.left;
+  const touchY = touch.clientY - rect.top;
+  
+  // Normalize touch position to canvas coordinates (0-1)
+  const normalizedX = touchX / rect.width;
+  const normalizedY = touchY / rect.height;
+  
+  // Direct position-based control: more intuitive and responsive
+  // Left half of canvas = left, right half = right
+  // Top 30% = boost
+  if (normalizedY < 0.3) {
+    // Top area: boost
+    keys.ArrowUp = true;
+  } else if (normalizedX < 0.5) {
+    // Left half: move left
+    keys.ArrowLeft = true;
+    keys.ArrowRight = false;
+  } else {
+    // Right half: move right
+    keys.ArrowRight = true;
+    keys.ArrowLeft = false;
+  }
+  
   touchStartX = touch.clientX;
   touchStartY = touch.clientY;
   isTouching = true;
@@ -421,42 +514,78 @@ canvas.addEventListener('touchstart', (e) => {
 }, { passive: false });
 
 canvas.addEventListener('touchmove', (e) => {
+  if (touchTarget !== 'canvas' || !isTouching || gamePaused || gameOver) return;
+  
   e.preventDefault();
-  if (!isTouching || gamePaused || gameOver) return;
   
-  const touch = e.touches[0];
-  const deltaX = touch.clientX - touchStartX;
-  const deltaY = touchStartY - touch.clientY;
+  // Find the active touch
+  const touch = Array.from(e.touches).find(t => t.identifier === activeTouchId);
+  if (!touch) return;
   
-  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
-    if (deltaX > 0) {
-      keys.ArrowRight = true;
-      keys.ArrowLeft = false;
-    } else {
-      keys.ArrowLeft = true;
-      keys.ArrowRight = false;
-    }
-  }
+  // Get canvas position relative to viewport
+  const rect = canvas.getBoundingClientRect();
+  const touchX = touch.clientX - rect.left;
+  const touchY = touch.clientY - rect.top;
   
-  if (deltaY > 20) {
+  // Normalize touch position to canvas coordinates (0-1)
+  const normalizedX = touchX / rect.width;
+  const normalizedY = touchY / rect.height;
+  
+  // Update controls based on current touch position (more responsive)
+  if (normalizedY < 0.3) {
+    // Top area: boost
     keys.ArrowUp = true;
+    keys.ArrowLeft = false;
+    keys.ArrowRight = false;
+  } else if (normalizedX < 0.5) {
+    // Left half: move left
+    keys.ArrowLeft = true;
+    keys.ArrowRight = false;
+    keys.ArrowUp = false;
+  } else {
+    // Right half: move right
+    keys.ArrowRight = true;
+    keys.ArrowLeft = false;
+    keys.ArrowUp = false;
   }
+  
+  // Update touch position for tracking
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
 }, { passive: false });
 
 canvas.addEventListener('touchend', (e) => {
+  if (touchTarget !== 'canvas') return;
+  
   e.preventDefault();
-  isTouching = false;
-  keys.ArrowLeft = false;
-  keys.ArrowRight = false;
-  keys.ArrowUp = false;
+  
+  // Only clear if this was our active touch
+  const endedTouch = Array.from(e.changedTouches).find(t => t.identifier === activeTouchId);
+  if (endedTouch) {
+    isTouching = false;
+    activeTouchId = null;
+    touchTarget = null;
+    keys.ArrowLeft = false;
+    keys.ArrowRight = false;
+    keys.ArrowUp = false;
+  }
 }, { passive: false });
 
 canvas.addEventListener('touchcancel', (e) => {
+  if (touchTarget !== 'canvas') return;
+  
   e.preventDefault();
-  isTouching = false;
-  keys.ArrowLeft = false;
-  keys.ArrowRight = false;
-  keys.ArrowUp = false;
+  
+  // Only clear if this was our active touch
+  const endedTouch = Array.from(e.changedTouches).find(t => t.identifier === activeTouchId);
+  if (endedTouch) {
+    isTouching = false;
+    activeTouchId = null;
+    touchTarget = null;
+    keys.ArrowLeft = false;
+    keys.ArrowRight = false;
+    keys.ArrowUp = false;
+  }
 }, { passive: false });
 
 // Mobile virtual buttons
@@ -484,50 +613,142 @@ function updateMobileControlsVisibility(isMobile) {
   }
 }
 
+// Improved virtual button handlers with better touch event support
 if (mobileLeft) {
   mobileLeft.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent canvas touch handler
+    const touch = e.touches[0];
+    activeTouchId = touch.identifier;
+    touchTarget = 'button-left';
     hapticFeedback(30);
     keys.ArrowLeft = true;
+    keys.ArrowRight = false; // Ensure no conflict
     if (!gameStarted && !gameOver) {
       gameStarted = true;
       lastSpawnTime = Date.now();
       sounds.playEngine();
     }
-  });
+  }, { passive: false });
+  
+  mobileLeft.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Keep button active even if finger moves slightly
+    if (touchTarget === 'button-left') {
+      keys.ArrowLeft = true;
+      keys.ArrowRight = false;
+    }
+  }, { passive: false });
+  
   mobileLeft.addEventListener('touchend', (e) => {
     e.preventDefault();
-    keys.ArrowLeft = false;
-  });
+    e.stopPropagation();
+    if (touchTarget === 'button-left') {
+      keys.ArrowLeft = false;
+      activeTouchId = null;
+      touchTarget = null;
+    }
+  }, { passive: false });
+  
+  mobileLeft.addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (touchTarget === 'button-left') {
+      keys.ArrowLeft = false;
+      activeTouchId = null;
+      touchTarget = null;
+    }
+  }, { passive: false });
 }
 
 if (mobileRight) {
   mobileRight.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent canvas touch handler
+    const touch = e.touches[0];
+    activeTouchId = touch.identifier;
+    touchTarget = 'button-right';
     hapticFeedback(30);
     keys.ArrowRight = true;
+    keys.ArrowLeft = false; // Ensure no conflict
     if (!gameStarted && !gameOver) {
       gameStarted = true;
       lastSpawnTime = Date.now();
       sounds.playEngine();
     }
-  });
+  }, { passive: false });
+  
+  mobileRight.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Keep button active even if finger moves slightly
+    if (touchTarget === 'button-right') {
+      keys.ArrowRight = true;
+      keys.ArrowLeft = false;
+    }
+  }, { passive: false });
+  
   mobileRight.addEventListener('touchend', (e) => {
     e.preventDefault();
-    keys.ArrowRight = false;
-  });
+    e.stopPropagation();
+    if (touchTarget === 'button-right') {
+      keys.ArrowRight = false;
+      activeTouchId = null;
+      touchTarget = null;
+    }
+  }, { passive: false });
+  
+  mobileRight.addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (touchTarget === 'button-right') {
+      keys.ArrowRight = false;
+      activeTouchId = null;
+      touchTarget = null;
+    }
+  }, { passive: false });
 }
 
 if (mobileBoost) {
   mobileBoost.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent canvas touch handler
+    const touch = e.touches[0];
+    activeTouchId = touch.identifier;
+    touchTarget = 'button-boost';
     hapticFeedback(30);
     keys.ArrowUp = true;
-  });
+  }, { passive: false });
+  
+  mobileBoost.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Keep button active even if finger moves slightly
+    if (touchTarget === 'button-boost') {
+      keys.ArrowUp = true;
+    }
+  }, { passive: false });
+  
   mobileBoost.addEventListener('touchend', (e) => {
     e.preventDefault();
-    keys.ArrowUp = false;
-  });
+    e.stopPropagation();
+    if (touchTarget === 'button-boost') {
+      keys.ArrowUp = false;
+      activeTouchId = null;
+      touchTarget = null;
+    }
+  }, { passive: false });
+  
+  mobileBoost.addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (touchTarget === 'button-boost') {
+      keys.ArrowUp = false;
+      activeTouchId = null;
+      touchTarget = null;
+    }
+  }, { passive: false });
 }
 
 if (mobilePause) {
@@ -620,22 +841,48 @@ function togglePause() {
 // ====== Update ======
 function update() {
   if (!gameStarted || gameOver || gamePaused) return;
+  
+  // Calculate deltaTime for frame-rate independent movement
+  const currentTime = performance.now();
+  const deltaTime = Math.min((currentTime - lastFrameTime) / 16.67, 2.0); // Cap at 2x for stability
+  lastFrameTime = currentTime;
+  const timeScale = deltaTime; // Normalize to 60 FPS (16.67ms per frame)
 
-  // Smooth player movement with acceleration and friction
+  // Smooth player movement with acceleration and friction (frame-rate independent)
+  // Improved physics: more responsive acceleration, smoother deceleration
   if (keys.ArrowLeft) {
-    player.velocity -= player.acceleration;
+    // Apply deceleration when changing direction
+    if (player.velocity > 0) {
+      player.velocity -= player.decelerationRate * timeScale * 2;
+      if (player.velocity < 0) player.velocity = 0;
+    }
+    // Accelerate left
+    player.velocity -= player.acceleration * timeScale;
   } else if (keys.ArrowRight) {
-    player.velocity += player.acceleration;
+    // Apply deceleration when changing direction
+    if (player.velocity < 0) {
+      player.velocity += player.decelerationRate * timeScale * 2;
+      if (player.velocity > 0) player.velocity = 0;
+    }
+    // Accelerate right
+    player.velocity += player.acceleration * timeScale;
   } else {
-    // Apply friction when no input
-    player.velocity *= player.friction;
+    // Apply smooth friction when no input (exponential decay)
+    // More realistic than Math.pow - uses exponential function
+    const frictionFactor = Math.pow(player.friction, timeScale);
+    player.velocity *= frictionFactor;
+    
+    // Stop completely if velocity is very small (prevents jitter)
+    if (Math.abs(player.velocity) < 0.1) {
+      player.velocity = 0;
+    }
   }
   
-  // Limit velocity
+  // Limit velocity with smooth clamping
   player.velocity = Math.max(-player.maxSpeed, Math.min(player.maxSpeed, player.velocity));
   
-  // Update position
-  player.x += player.velocity;
+  // Update position (frame-rate independent)
+  player.x += player.velocity * timeScale;
   
   // Keep player within road bounds (not on shoulders/curbs)
   // If using road image, use road area only; otherwise use programmatic road bounds
@@ -647,7 +894,7 @@ function update() {
     : roadStartX + roadWidth - player.width;
   player.x = Math.max(minX, Math.min(player.x, maxX));
 
-  // Enemy movement with speed multiplier
+  // Enemy movement with speed multiplier (frame-rate independent)
   const mv = keys.ArrowUp ? speedBoost : speedNormal;
   
   // Play boost sound when boosting
@@ -656,19 +903,19 @@ function update() {
   }
   
   enemies.forEach(e => {
-    e.y += mv * (e.speedMultiplier || 1.0);
+    e.y += mv * (e.speedMultiplier || 1.0) * timeScale;
   });
   
   // Animate road (move forward effect) - slower than enemy speed for smooth effect
   const roadSpeed = mv * 0.2; // 20% of movement speed for smoother, less blurry road animation
-  roadOffset += roadSpeed;
+  roadOffset += roadSpeed * timeScale;
   // Reset logic is handled in drawRoad() function based on image height or tile size
   
   // Dynamic enemy spawning
-  const currentTime = Date.now();
-  if (currentTime - lastSpawnTime >= getSpawnInterval()) {
+  const spawnCheckTime = Date.now();
+  if (spawnCheckTime - lastSpawnTime >= getSpawnInterval()) {
     spawnEnemy();
-    lastSpawnTime = currentTime;
+    lastSpawnTime = spawnCheckTime;
   }
 
   // Check collisions - break early to avoid multiple collisions in one frame
@@ -708,43 +955,68 @@ function update() {
 }
 
 // ====== Draw ======
+// Cache for road pattern to avoid recreating it every frame
+let roadPatternCache = {
+  pattern: null,
+  scaledHeight: 0,
+  canvasWidth: 0
+};
+
 function drawRoad() {
   // Use road image if loaded, otherwise fallback to programmatic drawing
   if (roadImage.complete && roadImage.naturalWidth > 0) {
-    // Draw animated road image with seamless scrolling
-    ctx.save();
-    ctx.translate(0, roadOffset);
-    
     const roadImageHeight = roadImage.height;
     const roadImageWidth = roadImage.width;
     
-    // Calculate how many times we need to repeat the image vertically
-    // Add extra tiles above and below for seamless scrolling
-    const tilesNeeded = Math.ceil((canvas.height + 120) / roadImageHeight) + 2;
-    const startTile = Math.floor(-roadOffset / roadImageHeight) - 1;
+    // Scale image to match canvas width while maintaining aspect ratio
+    const scale = canvas.width / roadImageWidth;
+    const scaledHeight = roadImageHeight * scale;
     
-    // Draw the road image repeatedly for seamless scrolling
-    for (let i = startTile; i < startTile + tilesNeeded; i++) {
-      const yPos = i * roadImageHeight;
-      // Scale image to match canvas width while maintaining aspect ratio
-      const scaledHeight = (canvas.width / roadImageWidth) * roadImageHeight;
-      ctx.drawImage(
+    // Create or reuse pattern for seamless tiling
+    if (!roadPatternCache.pattern || 
+        roadPatternCache.scaledHeight !== scaledHeight || 
+        roadPatternCache.canvasWidth !== canvas.width) {
+      
+      // Create a temporary canvas for the pattern tile
+      const patternCanvas = document.createElement('canvas');
+      patternCanvas.width = canvas.width;
+      patternCanvas.height = scaledHeight;
+      const patternCtx = patternCanvas.getContext('2d');
+      
+      // Enable high-quality smoothing
+      patternCtx.imageSmoothingEnabled = true;
+      patternCtx.imageSmoothingQuality = 'high';
+      
+      // Draw the road image scaled to pattern canvas
+      patternCtx.drawImage(
         roadImage,
-        0,
-        yPos,
-        canvas.width,
-        scaledHeight
+        0, 0, roadImageWidth, roadImageHeight,
+        0, 0, canvas.width, scaledHeight
       );
+      
+      // Create pattern that repeats vertically
+      roadPatternCache.pattern = ctx.createPattern(patternCanvas, 'repeat-y');
+      roadPatternCache.scaledHeight = scaledHeight;
+      roadPatternCache.canvasWidth = canvas.width;
     }
+    
+    // Normalize offset to prevent floating point accumulation errors
+    let normalizedOffset = roadOffset;
+    if (normalizedOffset >= scaledHeight) {
+      normalizedOffset = normalizedOffset % scaledHeight;
+      roadOffset = normalizedOffset;
+    }
+    
+    ctx.save();
+    
+    // Use pattern fill - this creates truly seamless tiling without visible cuts
+    ctx.translate(0, normalizedOffset);
+    ctx.fillStyle = roadPatternCache.pattern;
+    
+    // Fill a larger area to ensure complete coverage
+    ctx.fillRect(0, -scaledHeight, canvas.width, canvas.height + scaledHeight * 2);
     
     ctx.restore();
-    
-    // Reset roadOffset when it exceeds one image height for seamless loop
-    // Use scaled height for proper reset
-    const scaledHeight = (canvas.width / roadImageWidth) * roadImageHeight;
-    if (roadOffset >= scaledHeight) {
-      roadOffset = roadOffset - scaledHeight;
-    }
   } else {
     // Fallback: Draw brown shoulders (outer edges)
     ctx.fillStyle = "#8b6f47"; // Brown dirt/gravel
@@ -802,7 +1074,8 @@ function draw() {
 
   ctx.save();
   // Visual tilt effect based on movement direction
-  const tiltAngle = player.velocity * 0.05; // Small tilt effect
+  // Improved: smoother tilt with better responsiveness
+  const tiltAngle = player.velocity * 0.04; // Slightly reduced for more realistic feel (was 0.05)
   ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
   ctx.rotate(tiltAngle);
   
@@ -827,7 +1100,7 @@ function draw() {
       ctx.shadowBlur = 5;
     }
     
-    // Only draw if image is loaded - no fallback rectangles
+    // Draw enemy car (only one type: enemycar.png)
     if (enemyCar.complete && enemyCar.naturalWidth > 0) {
       ctx.drawImage(enemyCar, e.x, e.y, e.width, e.height);
     }
@@ -877,12 +1150,17 @@ function restartGame() {
   player.velocity = 0;
   roadOffset = 0;
   lastSpawnTime = Date.now();
+  lastFrameTime = performance.now(); // Reset frame time tracking
   sounds.stopEngine();
   hideGameOverScreen();
   const pauseOverlay = document.getElementById('pauseOverlay');
   if (pauseOverlay) {
     pauseOverlay.classList.add('hidden');
   }
+  
+  // Select a new random player car on restart for variety
+  selectRandomPlayerCar();
+  
   // Скрываем мобильные контролы при рестарте (игра еще не началась)
   const isMobile = isMobileDevice();
   updateMobileControlsVisibility(isMobile);
