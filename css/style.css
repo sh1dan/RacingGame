@@ -165,6 +165,12 @@ canvas {
   margin: 0;
   box-shadow: 0 0 20px #000;
   border-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.3s ease-in;
+}
+
+canvas.loaded {
+  opacity: 1;
 }
 
 /* ====== Game Over Overlay Styles ====== */

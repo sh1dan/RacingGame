@@ -9,6 +9,7 @@ const car = new Image();
 const roadImage = new Image();
 let imagesLoaded = 0;
 const totalImages = 3;
+let allImagesReady = false;
 
 function loadImage(img, src) {
   return new Promise((resolve, reject) => {
@@ -32,6 +33,12 @@ Promise.all([
   loadImage(roadImage, "assets/images/road.png")
 ]).then(() => {
   console.log("All images loaded");
+  allImagesReady = true;
+  // Show canvas after all images are loaded
+  const canvas = document.getElementById("gameCanvas");
+  if (canvas) {
+    canvas.classList.add("loaded");
+  }
 });
 
 // Smooth asphalt pattern optimized for movement
@@ -422,6 +429,17 @@ function draw() {
   ctx.setTransform(1,0,0,1,0,0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // Don't draw anything until all images are loaded
+  if (!allImagesReady) {
+    // Show loading message
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 20px 'Press Start 2P'";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Loading...", canvas.width / 2, canvas.height / 2);
+    return;
+  }
+
   drawRoad();
 
   // Draw animated center line only if NOT using road image (image already has markings)
@@ -449,14 +467,11 @@ function draw() {
     ctx.shadowBlur = 20; 
   }
   
-  // Only draw if image is loaded
+  // Only draw if image is loaded - no fallback rectangles
   if (car.complete && car.naturalWidth > 0) {
     ctx.drawImage(car, -player.width / 2, -player.height / 2, player.width, player.height);
-  } else {
-    // Fallback rectangle if image not loaded
-    ctx.fillStyle = "#00f";
-    ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
   }
+  // Don't draw fallback rectangle - wait for image to load
   ctx.restore();
 
   enemies.forEach(e => {
@@ -468,13 +483,11 @@ function draw() {
       ctx.shadowBlur = 5;
     }
     
+    // Only draw if image is loaded - no fallback rectangles
     if (enemyCar.complete && enemyCar.naturalWidth > 0) {
       ctx.drawImage(enemyCar, e.x, e.y, e.width, e.height);
-    } else {
-      // Fallback rectangle if image not loaded
-      ctx.fillStyle = e.speedMultiplier > 1.0 ? "#ff0" : "#f00";
-      ctx.fillRect(e.x, e.y, e.width, e.height);
     }
+    // Don't draw fallback rectangle - wait for image to load
     ctx.restore();
   });
 
