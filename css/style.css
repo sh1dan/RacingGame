@@ -209,7 +209,7 @@ header nav a.active:hover {
   .full-layout {
     display: flex !important;
     flex-direction: column !important;
-    padding: 30px 0 10px;
+    padding: 2px 0 10px !important; /* Отступ сверху 2px для мобильных */
     gap: 20px;
     width: 100%;
     max-width: 100%;
@@ -260,9 +260,10 @@ header nav a.active:hover {
   }
   
   /* Canvas column - full width, centered */
+  .full-layout > .canvas-column,
   .canvas-column {
     padding: 0 !important;
-    margin: 20px auto 0 !important;
+    margin: 2px auto 0 !important; /* Отступ сверху 2px для мобильных */
     width: 100%;
     display: flex;
     justify-content: center;
@@ -279,7 +280,7 @@ header nav a.active:hover {
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
-    padding: 0 !important;
+    padding: 2px 0 0 0 !important; /* Отступ сверху 2px для мобильных */
     margin: 0 auto !important;
     position: relative;
     flex: 1;
@@ -515,7 +516,7 @@ header nav a.active:hover {
   }
   
   .full-layout {
-    padding: 5px;
+    padding: 0 5px 5px !important; /* Убираем верхний отступ для маленьких экранов */
     gap: 10px;
   }
   
@@ -536,12 +537,13 @@ header nav a.active:hover {
     margin: 0 auto;
   }
   
+  .full-layout > .canvas-column,
   .canvas-column {
     width: 100%;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
-    margin: 0 auto;
+    margin: 2px auto 0 !important; /* Отступ сверху 2px для маленьких экранов */
   }
   
   .info-box {
