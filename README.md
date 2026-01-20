@@ -57,7 +57,6 @@ Racing Game is an engaging top-down racing game where players dodge enemy cars w
 - 📦 **Modular Structure**: Well-organized codebase
 - 🎯 **Performance Optimized**: Efficient collision detection and rendering
 - ⏱️ **Frame-Rate Independent**: DeltaTime-based movement ensures consistent speed across all devices
-- 🔧 **Easy to Deploy**: Ready for Vercel, Netlify, or any static host
 - 📱 **Mobile-First**: Enhanced touch controls with position-based steering and haptic feedback support
 - 🎨 **Seamless Road Tiling**: Canvas pattern-based road rendering eliminates visible seams
 
@@ -158,32 +157,30 @@ Then open your browser to `http://localhost:8000`
 racinggame/
 ├── index.html              # Main game page
 ├── leaderboard.html        # Leaderboard page
-├── vercel.json             # Vercel deployment config
 ├── README.md               # This file
 ├── LICENSE                 # MIT License
 │
 ├── css/                    # Stylesheets
-│   ├── style.css          # Main styles (1332 lines)
-│   └── game.css           # Game-specific styles (placeholder)
+│   ├── style.css          # Main styles (1172 lines)
+│   └── game.css           # Game-specific styles (placeholder, 1 line)
 │
 ├── js/                     # JavaScript files
-│   ├── script.js          # Game logic (~900 lines)
-│   └── leaderboard.js     # Leaderboard logic (~90 lines)
+│   ├── script.js          # Game logic (1104 lines)
+│   └── leaderboard.js     # Leaderboard logic (87 lines)
 │
 └── assets/                 # Static assets
-    └── images/            # Game images and icons
-        ├── car.svg        # Player car (legacy, not used)
-        ├── car2.svg       # Player car variant (not used)
-        ├── enemycar.png   # Enemy car sprite
-        ├── logo.svg       # Game logo
-        ├── road.png       # Road texture
-        ├── pause-icon.svg      # Pause button icon (yellow)
-        ├── left-arrow-icon.svg # Left arrow button icon (green)
-        ├── right-arrow-icon.svg# Right arrow button icon (green)
-        ├── up-arrow-icon.svg   # Boost button icon (rocket, green)
-        └── cars/          # Player car collection
-            ├── mercedesG63.svg      # Mercedes G63 (player car)
-            └── porsche911GT3rs.svg # Porsche 911 GT3 RS (player car)
+    ├── images/            # Game images and icons
+    │   ├── enemycar.png   # Enemy car sprite (used)
+    │   ├── logo.svg       # Game logo
+    │   ├── road.png       # Road texture (used)
+    │   ├── pause-icon.svg      # Pause button icon (yellow)
+    │   ├── left-arrow-icon.svg # Left arrow button icon (green)
+    │   ├── right-arrow-icon.svg# Right arrow button icon (green)
+    │   ├── up-arrow-icon.svg   # Boost button icon (rocket, green)
+    │   └── cars/          # Player car collection (used)
+    │       ├── mercedesG63.svg      # Mercedes G63 (player car, randomly selected)
+    │       └── porsche911GT3rs.svg # Porsche 911 GT3 RS (player car, randomly selected)
+    └── sounds/            # Sound effects directory (empty, using Web Audio API)
 ```
 
 ---
@@ -227,34 +224,6 @@ racinggame/
 - **Smooth animations**: Press effects and hover states
 - **Accessibility**: Proper ARIA labels and keyboard navigation
 - **Touch-optimized controls**: Position-based steering and virtual buttons with haptic feedback
-
----
-
-## 🌐 Deployment
-
-### Deploy to Vercel
-
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
-```
-
-Or simply push to GitHub and connect your repository to Vercel.
-
-### Deploy to Netlify
-
-1. Drag and drop the project folder to [Netlify Drop](https://app.netlify.com/drop)
-2. Or connect your Git repository
-
-### Deploy to GitHub Pages
-
-1. Push code to GitHub repository
-2. Go to Settings → Pages
-3. Select source branch and folder
-4. Your game will be live at `https://username.github.io/repository-name`
 
 ---
 
@@ -306,14 +275,22 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Project Stats
 
-- **Lines of Code**: ~2400+
+- **Total Lines of Code**: ~2364
+  - CSS: 1172 lines (style.css)
+  - JavaScript: 1191 lines (script.js: 1104, leaderboard.js: 87)
+  - HTML: ~180 lines (index.html + leaderboard.html)
 - **Files**: 15+
-- **Dependencies**: 0
+- **Dependencies**: 0 (pure vanilla JavaScript)
+- **Images Loaded**: 5 total
+  - Road texture: 1
+  - Player cars: 2 (Mercedes G63, Porsche 911 GT3 RS)
+  - Enemy car: 1 (enemycar.png)
+  - Legacy enemy car: 1 (for backward compatibility)
 - **Browser Support**: Modern browsers (Chrome, Firefox, Safari, Edge)
 - **Mobile Support**: iOS Safari, Chrome Mobile, Firefox Mobile
-- **Player Cars**: 2 (Mercedes G63, Porsche 911 GT3 RS) - randomly selected
+- **Player Cars**: 2 (Mercedes G63, Porsche 911 GT3 RS) - randomly selected on each restart
 - **Enemy Cars**: 1 (enemycar.png)
-- **Frame Rate**: 60 FPS with deltaTime-based movement
+- **Frame Rate**: 60 FPS with deltaTime-based movement for consistent speed across devices
 
 ---
 
