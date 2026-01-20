@@ -97,8 +97,8 @@ function resizeCanvas() {
         const wrapperRect = canvasWrapper.getBoundingClientRect();
         // Используем реальный размер wrapper для canvas, но не меньше минимального
         displayWidth = Math.max(wrapperRect.width || window.innerWidth, 300);
-        // Увеличиваем высоту canvas на мобильных - используем больше пространства экрана
-        displayHeight = Math.max(wrapperRect.height || (window.innerHeight - 50 - 100), 500);
+        // Увеличиваем высоту canvas на мобильных - используем больше пространства экрана, минус 4px
+        displayHeight = Math.max(wrapperRect.height || (window.innerHeight - 50 - 100 - 4), 496);
         
         // Получаем devicePixelRatio для высокого качества на Retina дисплеях
         const dpr = window.devicePixelRatio || 1;
@@ -469,6 +469,10 @@ let lastFrameTime = performance.now(); // For deltaTime calculation
 // Touch controls - Only for buttons, not canvas
 let activeTouchId = null; // Track specific touch for multi-touch support
 let touchTarget = null; // Track which element was touched (button only)
+// Отдельные идентификаторы для каждой кнопки для правильной обработки одновременных нажатий
+let leftTouchId = null;
+let rightTouchId = null;
+let boostTouchId = null;
 
 // ====== Overlay Elements ======
 const gameOverBackdrop  = document.getElementById('gameOverBackdrop');
@@ -590,6 +594,7 @@ if (mobileLeft) {
     e.preventDefault();
     e.stopPropagation(); // Prevent canvas touch handler
     const touch = e.touches[0];
+    leftTouchId = touch.identifier; // Сохраняем идентификатор для left кнопки
     activeTouchId = touch.identifier;
     touchTarget = 'button-left';
     hapticFeedback(30);
@@ -606,7 +611,8 @@ if (mobileLeft) {
     e.preventDefault();
     e.stopPropagation();
     // Keep button active even if finger moves slightly
-    if (touchTarget === 'button-left') {
+    const currentTouch = Array.from(e.touches).find(t => t.identifier === leftTouchId);
+    if (currentTouch || touchTarget === 'button-left') {
       keys.ArrowLeft = true;
       keys.ArrowRight = false;
     }
@@ -615,20 +621,37 @@ if (mobileLeft) {
   mobileLeft.addEventListener('touchend', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (touchTarget === 'button-left') {
+    // Проверяем по идентификатору touch и по элементу события
+    const endedTouch = Array.from(e.changedTouches).find(t => t.identifier === leftTouchId);
+    if (endedTouch || e.target === mobileLeft || e.currentTarget === mobileLeft) {
       keys.ArrowLeft = false;
-      activeTouchId = null;
-      touchTarget = null;
+      if (leftTouchId !== null) {
+        if (activeTouchId === leftTouchId) {
+          activeTouchId = null;
+        }
+        if (touchTarget === 'button-left') {
+          touchTarget = null;
+        }
+        leftTouchId = null;
+      }
     }
   }, { passive: false });
   
   mobileLeft.addEventListener('touchcancel', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (touchTarget === 'button-left') {
+    const cancelledTouch = Array.from(e.changedTouches).find(t => t.identifier === leftTouchId);
+    if (cancelledTouch || e.target === mobileLeft || e.currentTarget === mobileLeft) {
       keys.ArrowLeft = false;
-      activeTouchId = null;
-      touchTarget = null;
+      if (leftTouchId !== null) {
+        if (activeTouchId === leftTouchId) {
+          activeTouchId = null;
+        }
+        if (touchTarget === 'button-left') {
+          touchTarget = null;
+        }
+        leftTouchId = null;
+      }
     }
   }, { passive: false });
 }
@@ -638,6 +661,7 @@ if (mobileRight) {
     e.preventDefault();
     e.stopPropagation(); // Prevent canvas touch handler
     const touch = e.touches[0];
+    rightTouchId = touch.identifier; // Сохраняем идентификатор для right кнопки
     activeTouchId = touch.identifier;
     touchTarget = 'button-right';
     hapticFeedback(30);
@@ -654,7 +678,8 @@ if (mobileRight) {
     e.preventDefault();
     e.stopPropagation();
     // Keep button active even if finger moves slightly
-    if (touchTarget === 'button-right') {
+    const currentTouch = Array.from(e.touches).find(t => t.identifier === rightTouchId);
+    if (currentTouch || touchTarget === 'button-right') {
       keys.ArrowRight = true;
       keys.ArrowLeft = false;
     }
@@ -663,27 +688,42 @@ if (mobileRight) {
   mobileRight.addEventListener('touchend', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (touchTarget === 'button-right') {
+    // Проверяем по идентификатору touch и по элементу события
+    const endedTouch = Array.from(e.changedTouches).find(t => t.identifier === rightTouchId);
+    if (endedTouch || e.target === mobileRight || e.currentTarget === mobileRight) {
       keys.ArrowRight = false;
-      activeTouchId = null;
-      touchTarget = null;
+      if (rightTouchId !== null) {
+        if (activeTouchId === rightTouchId) {
+          activeTouchId = null;
+        }
+        if (touchTarget === 'button-right') {
+          touchTarget = null;
+        }
+        rightTouchId = null;
+      }
     }
   }, { passive: false });
   
   mobileRight.addEventListener('touchcancel', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (touchTarget === 'button-right') {
+    const cancelledTouch = Array.from(e.changedTouches).find(t => t.identifier === rightTouchId);
+    if (cancelledTouch || e.target === mobileRight || e.currentTarget === mobileRight) {
       keys.ArrowRight = false;
-      activeTouchId = null;
-      touchTarget = null;
+      if (rightTouchId !== null) {
+        if (activeTouchId === rightTouchId) {
+          activeTouchId = null;
+        }
+        if (touchTarget === 'button-right') {
+          touchTarget = null;
+        }
+        rightTouchId = null;
+      }
     }
   }, { passive: false });
 }
 
 if (mobileBoost) {
-  let boostTouchId = null; // Отдельный идентификатор для boost кнопки
-  
   mobileBoost.addEventListener('touchstart', (e) => {
     e.preventDefault();
     e.stopPropagation(); // Prevent canvas touch handler
@@ -699,7 +739,8 @@ if (mobileBoost) {
     e.preventDefault();
     e.stopPropagation();
     // Keep button active even if finger moves slightly
-    if (touchTarget === 'button-boost') {
+    const currentTouch = Array.from(e.touches).find(t => t.identifier === boostTouchId);
+    if (currentTouch || touchTarget === 'button-boost') {
       keys.ArrowUp = true;
     }
   }, { passive: false });
@@ -707,14 +748,18 @@ if (mobileBoost) {
   mobileBoost.addEventListener('touchend', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    // Проверяем, что это событие относится к boost кнопке по идентификатору touch
+    // Проверяем по идентификатору touch и по элементу события
     const endedTouch = Array.from(e.changedTouches).find(t => t.identifier === boostTouchId);
     if (endedTouch || e.target === mobileBoost || e.currentTarget === mobileBoost) {
       // Всегда сбрасываем boost если это событие от boost кнопки
       keys.ArrowUp = false;
-      if (touchTarget === 'button-boost' || boostTouchId !== null) {
-        activeTouchId = null;
-        touchTarget = null;
+      if (boostTouchId !== null) {
+        if (activeTouchId === boostTouchId) {
+          activeTouchId = null;
+        }
+        if (touchTarget === 'button-boost') {
+          touchTarget = null;
+        }
         boostTouchId = null;
       }
     }
@@ -727,9 +772,13 @@ if (mobileBoost) {
     const cancelledTouch = Array.from(e.changedTouches).find(t => t.identifier === boostTouchId);
     if (cancelledTouch || e.target === mobileBoost || e.currentTarget === mobileBoost) {
       keys.ArrowUp = false;
-      if (touchTarget === 'button-boost' || boostTouchId !== null) {
-        activeTouchId = null;
-        touchTarget = null;
+      if (boostTouchId !== null) {
+        if (activeTouchId === boostTouchId) {
+          activeTouchId = null;
+        }
+        if (touchTarget === 'button-boost') {
+          touchTarget = null;
+        }
         boostTouchId = null;
       }
     }

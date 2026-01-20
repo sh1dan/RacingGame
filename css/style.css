@@ -523,8 +523,8 @@ header nav a.active:hover {
   canvas {
     width: 100vw !important;
     max-width: 100vw !important;
-    height: calc(100vh - 50px - 100px) !important;
-    max-height: calc(100vh - 50px - 100px) !important;
+    height: calc(100vh - 50px - 100px - 4px) !important;
+    max-height: calc(100vh - 50px - 100px - 4px) !important;
     object-fit: fill;
     margin: 0 auto !important;
   }
@@ -754,8 +754,8 @@ canvas.loaded {
     canvas {
       width: 100vw !important;
       max-width: 100vw !important;
-      height: calc(100vh - 50px - 100px) !important;
-      max-height: calc(100vh - 50px - 100px) !important;
+      height: calc(100vh - 50px - 100px - 4px) !important;
+      max-height: calc(100vh - 50px - 100px - 4px) !important;
       object-fit: fill;
       display: block !important;
       visibility: visible !important;
