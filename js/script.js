@@ -1157,14 +1157,14 @@ function draw() {
   ctx.rotate(tiltAngle);
   
   if (keys.ArrowUp) { 
-    // Масштабируем shadowBlur для правильного отображения на мобильных с dpr
-    const dpr = window.devicePixelRatio || 1;
     const isMobile = isMobileDevice();
     ctx.shadowColor = "cyan"; 
-    // На мобильных контекст уже масштабирован на dpr, поэтому shadowBlur должен быть в координатах контекста
-    // Чтобы визуальный эффект был одинаковым, используем одинаковое значение
-    // Но увеличиваем для лучшей видимости на мобильных
-    ctx.shadowBlur = isMobile ? 20 * dpr : 20; 
+    // На мобильных контекст масштабирован на dpr через setTransform
+    // shadowBlur применяется в масштабированном контексте
+    // Используем большее значение для мобильных для более яркого эффекта
+    const dpr = window.devicePixelRatio || 1;
+    // Увеличиваем свечение на мобильных - используем большее значение
+    ctx.shadowBlur = isMobile ? 40 : 20;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
   } else {
