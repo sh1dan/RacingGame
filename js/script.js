@@ -1158,13 +1158,12 @@ function draw() {
   
   if (keys.ArrowUp) { 
     const isMobile = isMobileDevice();
-    ctx.shadowColor = "cyan"; 
-    // На мобильных контекст масштабирован на dpr через setTransform
-    // shadowBlur применяется в масштабированном контексте
-    // Используем большее значение для мобильных для более яркого эффекта
-    const dpr = window.devicePixelRatio || 1;
-    // Увеличиваем свечение на мобильных - используем большее значение
-    ctx.shadowBlur = isMobile ? 40 : 20;
+    // Используем rgba с полупрозрачностью для правильного отображения на мобильных
+    // Это помогает браузеру правильно обработать альфа-канал картинки
+    ctx.shadowColor = "rgba(0, 255, 255, 0.6)"; // Cyan с полупрозрачностью
+    // Уменьшаем shadowBlur для лучшей производительности и правильного отображения
+    // На мобильных используем меньшее значение из-за особенностей рендеринга
+    ctx.shadowBlur = isMobile ? 15 : 20;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
   } else {
@@ -1175,11 +1174,18 @@ function draw() {
     ctx.shadowOffsetY = 0;
   }
   
-  // Only draw if image is loaded - no fallback rectangles
+  // ВАЖНО: Рисуем именно картинку машины, а не прямоугольник
+  // Это гарантирует правильную обработку альфа-канала и контура машины
   if (car.complete && car.naturalWidth > 0) {
     ctx.drawImage(car, -player.width / 2, -player.height / 2, player.width, player.height);
   }
-  // Don't draw fallback rectangle - wait for image to load
+  
+  // Обязательно сбрасываем shadow после рисования
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = "transparent";
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+  
   ctx.restore();
 
   enemies.forEach(e => {
