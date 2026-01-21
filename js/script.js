@@ -186,17 +186,17 @@ let allImagesReady = false;
 
 // ====== Audio System ======
 let audioContext = null;
-let soundsEnabled = true;
+let soundsEnabled = false; // Звуки отключены
 
 // Initialize audio context (required for Web Audio API)
 function initAudio() {
   try {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    // Try to load sound settings from localStorage
-    const soundSetting = localStorage.getItem('soundsEnabled');
-    if (soundSetting !== null) {
-      soundsEnabled = soundSetting === 'true';
-    }
+    // Звуки отключены - не загружаем настройки из localStorage
+    // const soundSetting = localStorage.getItem('soundsEnabled');
+    // if (soundSetting !== null) {
+    //   soundsEnabled = soundSetting === 'true';
+    // }
   } catch (e) {
     console.warn('Web Audio API not supported:', e);
     soundsEnabled = false;
